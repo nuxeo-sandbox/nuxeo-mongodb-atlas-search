@@ -1,0 +1,31 @@
+version: "3.8"
+services:
+  mongodb:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+  nuxeo:
+    image: nuxeo-mongodb-atlas-search:2023.0.0-SNAPSHOT
+    env_file:
+      - ./.env
+    ports:
+      - "8080:8080"
+      - "8787:8787"
+    environment:
+      - JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8787
+      - NUXEO_DEV=true
+      - NUXEO_PACKAGES=nuxeo-web-ui ${NUXEO_PACKAGES}
+      - NUXEO_CLID=${NUXEO_CLID}
+    hostname: nuxeo
+    restart: always
+    depends_on:
+      - mongodb
+    volumes:
+      - ./conf.d:/etc/nuxeo/conf.d
+      - nuxeo_data:/var/lib/nuxeo
+volumes:
+  nuxeo_data: {}
+  os_data:
+  mongodb_data:

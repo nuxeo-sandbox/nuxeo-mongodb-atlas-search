@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.labs.atlas.search.db.test">
+  <extension target="org.nuxeo.runtime.mongodb.MongoDBComponent" point="connection">
+    <connection id="default">
+      <server>mongodb:27017</server>
+      <dbname>nuxeo</dbname>
+    </connection>
+  </extension>
+</component>

@@ -1,0 +1,9 @@
+Bundle-ActivationPolicy: lazy
+Bundle-ClassPath: .
+Manifest-Version: 1.0
+Bundle-Vendor: org.nuxeo.labs.atlas.search
+Bundle-Version: 1.0.0
+Bundle-Name: nuxeo-mongodb-atlas-search-core
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: nuxeo-mongodb-atlas-search-core;singleton=true
+Nuxeo-Component: OSGI-INF/simple-mongodb-atlas-search-pp-contrib.xml
