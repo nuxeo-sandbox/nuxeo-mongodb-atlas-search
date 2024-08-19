@@ -30,3 +30,5 @@ bin/
 *.bak
 *~gen
 .env
+conf.d/atlas.conf
+test-mongodb-connection-config.xml

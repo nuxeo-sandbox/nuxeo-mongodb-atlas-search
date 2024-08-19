@@ -13,6 +13,14 @@
                 <fixedPart>ecm:mixinType != 'HiddenInNavigation' AND ecm:isVersion = 0 AND ecm:isTrashed = 0</fixedPart>
             </whereClause>
             <pageSize>10</pageSize>
+            <aggregates>
+                <aggregate id="ecm_primarytype_agg" type="terms" parameter="ecm:primaryType">
+                    <field name="title" schema="dublincore"/>
+                    <properties>
+                        <property name="size">10</property>
+                    </properties>
+                </aggregate>
+            </aggregates>
         </genericPageProvider>
     </extension>
 
