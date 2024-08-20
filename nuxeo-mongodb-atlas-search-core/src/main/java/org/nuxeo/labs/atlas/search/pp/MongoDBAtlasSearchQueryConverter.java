@@ -22,11 +22,13 @@ import java.io.StringReader;
 import java.time.ZonedDateTime;
 import java.util.*;
 
+import static org.nuxeo.ecm.core.storage.dbs.DBSDocument.KEY_ANCESTOR_IDS;
+
 public class MongoDBAtlasSearchQueryConverter {
 
-    protected static final String SELECT_ALL = "SELECT * FROM Document";
+    public static final String SELECT_ALL = "SELECT * FROM Document";
 
-    protected static final String SELECT_ALL_WHERE = "SELECT * FROM Document WHERE ";
+    public static final String SELECT_ALL_WHERE = "SELECT * FROM Document WHERE ";
 
 
     private MongoDBAtlasSearchQueryConverter() {
@@ -141,7 +143,7 @@ public class MongoDBAtlasSearchQueryConverter {
         return searchOperator;
     }
 
-    protected static SQLQuery getSqlQuery(String nxql) {
+    public static SQLQuery getSqlQuery(String nxql) {
         String query = completeQueryWithSelect(nxql);
         SQLQuery nxqlQuery;
         try {
@@ -153,7 +155,7 @@ public class MongoDBAtlasSearchQueryConverter {
         return nxqlQuery;
     }
 
-    protected static SQLQuery addSecurityPolicy(CoreSession session, SQLQuery query) {
+    public static SQLQuery addSecurityPolicy(CoreSession session, SQLQuery query) {
         Collection<SQLQuery.Transformer> transformers = Framework.getService(SecurityService.class)
                 .getPoliciesQueryTransformers(
                         session.getRepositoryName());
@@ -163,7 +165,7 @@ public class MongoDBAtlasSearchQueryConverter {
         return query;
     }
 
-    protected static String completeQueryWithSelect(String nxql) {
+    public static String completeQueryWithSelect(String nxql) {
         String query = (nxql == null) ? "" : nxql.trim();
         if (query.isEmpty()) {
             query = SELECT_ALL;
@@ -193,11 +195,11 @@ public class MongoDBAtlasSearchQueryConverter {
                 filter = SearchOperator.compound().mustNot(List.of(query));
                 query = null;
             }
-        /*} else if (nxqlName.startsWith(NXQL.ECM_ANCESTORID)) {
-            filter = makeAncestorIdFilter((String) value, session);
+        } else if (nxqlName.startsWith(NXQL.ECM_ANCESTORID)) {
+            filter = SearchOperator.of(new Document("equals", new Document("path", KEY_ANCESTOR_IDS).append("value", value)));
             if ("!=".equals(op) || "<>".equals(op)) {
-                filter = SearchOperator.compound().mustNot(filter);
-            }*/
+                filter = SearchOperator.compound().mustNot(List.of(filter));
+            }
         } else if (nxqlName.equals(NXQL.ECM_ISTRASHED)) {
             filter = makeTrashedFilter(op, name, (String) value);
         } else if (nxqlName.equals(NXQL.ECM_ISVERSION)) {
@@ -212,39 +214,39 @@ public class MongoDBAtlasSearchQueryConverter {
                     filter = SearchOperator.compound().mustNot(
                             List.of(SearchOperator.of(new Document("equals", new Document("path", name).append("value", checkBoolValue(nxqlName, value))))));
                     break;
-                /*case ">":
-                    filter = QueryBuilders.rangeQuery(name).gt(value);
+                case ">":
+                    filter = SearchOperator.numberRange(SearchPath.fieldPath(name)).gt((Number) value);
                     break;
                 case "<":
-                    filter = QueryBuilders.rangeQuery(name).lt(value);
+                    filter = SearchOperator.numberRange(SearchPath.fieldPath(name)).lt((Number) value);
                     break;
                 case ">=":
-                    filter = QueryBuilders.rangeQuery(name).gte(value);
+                    filter = SearchOperator.numberRange(SearchPath.fieldPath(name)).gte((Number) value);
                     break;
                 case "<=":
-                    filter = QueryBuilders.rangeQuery(name).lte(value);
+                    filter = SearchOperator.numberRange(SearchPath.fieldPath(name)).lte((Number) value);
                     break;
                 case "BETWEEN":
                 case "NOT BETWEEN":
-                    filter = QueryBuilders.rangeQuery(name).from(values[0]).to(values[1]);
+                    filter = SearchOperator.numberRange(SearchPath.fieldPath(name)).gteLte((Number)values[0], (Number)values[1]);
                     if (op.startsWith("NOT")) {
-                        filter = QueryBuilders.boolQuery().mustNot(filter);
+                        filter = SearchOperator.compound().mustNot(List.of(filter));
                     }
                     break;
                 case "IN":
                 case "NOT IN":
-                    filter = QueryBuilders.termsQuery(name, values);
+                    filter =  SearchOperator.of(new Document("path",SearchPath.fieldPath(name)).append("value", values));
                     if (op.startsWith("NOT")) {
-                        filter = QueryBuilders.boolQuery().mustNot(filter);
+                        filter = SearchOperator.compound().mustNot(List.of(filter));
                     }
                     break;
                 case "IS NULL":
-                    filter = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery(name));
+                    filter = SearchOperator.compound().mustNot(List.of(SearchOperator.exists(SearchPath.fieldPath(name))));
                     break;
                 case "IS NOT NULL":
-                    filter = QueryBuilders.existsQuery(name);
+                    filter = SearchOperator.exists(SearchPath.fieldPath(name));
                     break;
-                case "LIKE":
+                /*case "LIKE":
                 case "ILIKE":
                 case "NOT LIKE":
                 case "NOT ILIKE":
@@ -263,7 +265,7 @@ public class MongoDBAtlasSearchQueryConverter {
         return new QueryAndFilter(query, filter);
     }
 
-    protected static String getFieldName(String name, EsHint hint) {
+    public static String getFieldName(String name, EsHint hint) {
         if (hint != null && hint.index != null) {
             return hint.index;
         }
@@ -277,11 +279,11 @@ public class MongoDBAtlasSearchQueryConverter {
         return name;
     }
 
-    protected static SearchOperator makeFulltextQuery(String nxqlName, String value, EsHint hint) {
+    public static SearchOperator makeFulltextQuery(String nxqlName, String value, EsHint hint) {
         return SearchOperator.text(SearchPath.wildcardPath("*"), value);
     }
 
-    protected static SearchOperator makeTrashedFilter(String op, String name, String value) {
+    public static SearchOperator makeTrashedFilter(String op, String name, String value) {
         boolean equalsDeleted;
         switch (op) {
             case "=":
@@ -307,13 +309,13 @@ public class MongoDBAtlasSearchQueryConverter {
                 : null;
     }
 
-    protected static SearchOperator makeVersionFilter(String op, String name,Object value) {
-        return "1".equals(value) ?
+    public static SearchOperator makeVersionFilter(String op, String name, Object value) {
+        return (Boolean) value ?
                 SearchOperator.of(new Document("equals", new Document("path", name).append("value", value)))
                 : null;
     }
 
-    protected static Object checkBoolValue(String nxqlName, Object value) {
+    public static Object checkBoolValue(String nxqlName, Object value) {
         if (!"0".equals(value) && !"1".equals(value)) {
             return value;
         }
@@ -392,7 +394,7 @@ public class MongoDBAtlasSearchQueryConverter {
                 if ("AND".equals(operator)) {
                     query = query != null ? query.must(List.of(inputQuery)) : SearchOperator.compound().must(List.of(inputQuery));
                 } else if ("OR".equals(operator)) {
-                    query = query != null ? query.filter(List.of(inputQuery)) : SearchOperator.compound().filter(List.of(inputQuery));
+                    query = query != null ? query.should(List.of(inputQuery)) : SearchOperator.compound().should(List.of(inputQuery));
                 } else if ("NOT".equals(operator)) {
                     query = query != null ? query.mustNot(List.of(inputQuery)) : SearchOperator.compound().mustNot(List.of(inputQuery));
                 }
@@ -408,9 +410,6 @@ public class MongoDBAtlasSearchQueryConverter {
         }
 
         public SearchOperator get() {
-            /*if (query == null) {
-                return QueryBuilders.matchAllQuery();
-            }*/
             return query;
         }
 
