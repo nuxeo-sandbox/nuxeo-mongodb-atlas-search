@@ -105,7 +105,7 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
                     )
                     .toList();
             AggregateDefinition def = aggregateDefinitions.stream().filter(predicate -> name.equals(predicate.getId())).findFirst().orElse(null);
-            AggregateBase<BucketTerm> base = new AggregateBase<BucketTerm>(def, getSearchDocumentModel());
+            AggregateBase<BucketTerm> base = new AggregateBase<>(def, getSearchDocumentModel());
             base.setBuckets(parsedBucket);
             aggregates.put(name, base);
         }
@@ -145,20 +145,35 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
         DocumentModel searchDoc = getSearchDocumentModel();
         Map<String, String> namedParameters = (Map<String, String>) searchDoc.getContextData(NAMED_PARAMETERS);
 
+        buildQuery(getCoreSession());
+
+        System.out.println(query);
+
+        SearchOperator nxqlSearchOp =MongoDBAtlasSearchQueryConverter.toAtlasQuery(query,getCoreSession());
+        System.out.println(format(nxqlSearchOp.toBsonDocument()));
+
         CoreSession session = getCoreSession();
         MongoCollection<Document> collection = getCollection(session);
 
         List<Bson> stages = new ArrayList<>();
 
         // $search stage
-        SearchOptions options = SearchOptions.searchOptions()
+        SearchOptions searchOptions = SearchOptions.searchOptions()
                 .index("default")
                 .count(SearchCount.total());
+
+        if (!getSortInfos().isEmpty()) {
+            Document sortOption = new Document();
+            for(SortInfo sortInfo : getSortInfos()) {
+                sortOption.append(sortInfo.getSortColumn(), sortInfo.getSortAscending() ? 1 : 0);
+            }
+            searchOptions = searchOptions.option("sort",sortOption);
+        }
 
         SearchOperator operator;
 
         if (runWithFacets()) {
-            SearchOperator innerOp = SearchOperator.text(SearchPath.wildcardPath("*"), namedParameters.get("input_text"));
+            SearchOperator innerOp = nxqlSearchOp;
             List<SearchOperator> facetFilters = buildFacetFilter();
             if (!facetFilters.isEmpty()) {
                 innerOp = SearchOperator.compound().must(List.of(innerOp)).filter(facetFilters);
@@ -169,33 +184,33 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
                                     .append("facets", buildFacets())));
             System.out.println(format(operator.toBsonDocument()));
         } else {
-            operator = SearchOperator.text(SearchPath.wildcardPath("*"), namedParameters.get("input_text"));
+            operator = nxqlSearchOp;
         }
 
-        Bson searchStage = Aggregates.search(operator, options);
+        Bson searchStage = Aggregates.search(operator, searchOptions);
         System.out.println(format(searchStage.toBsonDocument()));
         stages.add(searchStage);
 
-        if (runWithFacets()) {
-            // $facet stage
-            List<Bson> facetStages = new ArrayList<>();
-            facetStages.add(Aggregates.skip((int) getCurrentPageOffset()));
-            facetStages.add(Aggregates.limit((int) getPageSize()));
+        // $facet stage
+        List<Bson> facetStages = new ArrayList<>();
+        facetStages.add(Aggregates.skip((int) getCurrentPageOffset()));
+        facetStages.add(Aggregates.limit((int) getPageSize()));
 
-            //Set document fields to include in the response
-            List<Bson> projections = new ArrayList<>();
-            projections.add(Projections.include("ecm:id"));
+        //Set document fields to include in the response
+        List<Bson> projections = new ArrayList<>();
+        projections.add(Projections.excludeId());
+        projections.add(Projections.include("ecm:id"));
+        projections.add(Projections.metaSearchScore("_score"));
 
-            facetStages.add(Aggregates.project(Projections.fields(projections)));
-            Bson facetStage = new Document("$facet",
-                    new Document("docs", facetStages)
-                            .append("meta",
-                                    Arrays.asList(new Document("$replaceWith", "$$SEARCH_META"), Aggregates.limit(1)))
-            );
+        facetStages.add(Aggregates.project(Projections.fields(projections)));
+        Bson facetStage = new Document("$facet",
+                new Document("docs", facetStages)
+                        .append("meta",
+                                Arrays.asList(new Document("$replaceWith", "$$SEARCH_META"), Aggregates.limit(1)))
+        );
 
-            System.out.println(format(facetStage.toBsonDocument()));
-            stages.add(facetStage);
-        }
+        System.out.println(format(facetStage.toBsonDocument()));
+        stages.add(facetStage);
 
         //set stage
         Bson setStage = new Document("$set",

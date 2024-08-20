@@ -21,6 +21,12 @@
 
         <dependency>
             <groupId>org.nuxeo.ecm.core</groupId>
+            <artifactId>nuxeo-core-storage-sql</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.nuxeo.ecm.core</groupId>
             <artifactId>nuxeo-core-storage-mongodb</artifactId>
             <scope>provided</scope>
         </dependency>

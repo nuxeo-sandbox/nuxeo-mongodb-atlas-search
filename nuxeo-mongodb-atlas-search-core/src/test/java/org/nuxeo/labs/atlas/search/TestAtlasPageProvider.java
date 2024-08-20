@@ -1,5 +1,6 @@
 package org.nuxeo.labs.atlas.search;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.automation.core.util.PageProviderHelper;
@@ -18,6 +19,7 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,22 +30,40 @@ import java.util.Map;
 @Deploy({
         "nuxeo-mongodb-atlas-search-core",
         "org.nuxeo.ecm.core.storage.mongodb",
-        "nuxeo-mongodb-atlas-search-core:test-mongodb-connection-config.xml"
+        "nuxeo-mongodb-atlas-search-core:test-mongodb-connection-config.xml",
+        "nuxeo-mongodb-atlas-search-core:simple-mongodb-atlas-search-pp-contrib.xml"
 })
 public class TestAtlasPageProvider {
 
     @Test
-    public void testPP() {
+    public void testWithAgg() {
+        HashMap<String, String> namedParameters = new HashMap<>();
+        namedParameters.put("system_fulltext", "prores");
+        PageProvider<DocumentModel> pp = getPP(namedParameters);
+        List<DocumentModel> results = pp.getCurrentPage();
+        Assert.assertFalse(results.isEmpty());
+        Map<String, Aggregate<? extends Bucket>> aggregates = pp.getAggregates();
+        Assert.assertEquals(1, aggregates.size());
+    }
+
+    @Test
+    public void testWithoutAgg() {
+        HashMap<String, String> namedParameters = new HashMap<>();
+        namedParameters.put("system_fulltext", "prores");
+        PageProvider<DocumentModel> pp = getPP(namedParameters);
+        Map<String, Serializable> props = pp.getProperties();
+        props.put(PageProvider.SKIP_AGGREGATES_PROP,true);
+        pp.setProperties(props);
+        List<DocumentModel> results = pp.getCurrentPage();
+        Assert.assertFalse(results.isEmpty());
+        Map<String, Aggregate<? extends Bucket>> aggregates = pp.getAggregates();
+        Assert.assertTrue(aggregates == null || aggregates.isEmpty());
+    }
+
+    public PageProvider<DocumentModel> getPP(Map<String, String> namedParameters) {
         CoreSession session = CoreInstance.getCoreSession("default");
         PageProviderDefinition def = PageProviderHelper.getPageProviderDefinition("simple-atlas-search");
-        HashMap<String,String> namedParameters = new HashMap<>();
-        namedParameters.put("input_text","apple");
-        namedParameters.put("ecm_primarytype_agg","File");
-        PageProvider<DocumentModel> pp = (PageProvider<DocumentModel>) PageProviderHelper.getPageProvider(session, def, namedParameters);
-        List<DocumentModel> results = pp.getCurrentPage();
-        System.out.println(results);
-        Map<String, Aggregate<? extends Bucket>> aggregates = pp.getAggregates();
-        System.out.println(aggregates);
+        return (PageProvider<DocumentModel>) PageProviderHelper.getPageProvider(session, def, namedParameters);
     }
 
 }

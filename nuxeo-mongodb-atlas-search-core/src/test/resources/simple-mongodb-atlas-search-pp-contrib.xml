@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.labs.atlas.search.test.pp">
+
+    <require>org.nuxeo.ecm.core.CoreExtensions</require>
+
+    <extension target="org.nuxeo.ecm.core.schema.TypeService" point="schema">
+        <schema name="simple-atlas_pp" prefix="simple-atlas-search" override="true" src="simple-atlas_pp.xsd"/>
+    </extension>
+
+    <extension target="org.nuxeo.ecm.core.schema.TypeService" point="doctype">
+        <doctype name="simple-atlas_pp" extends="Document">
+            <facet name="ContentViewDisplay"/>
+            <facet name="SavedSearch"/>
+            <facet name="HiddenInNavigation"/>
+            <schema name="simple-atlas_pp"/>
+        </doctype>
+    </extension>
+
+    <extension point="providers" target="org.nuxeo.ecm.platform.query.api.PageProviderService">
+        <genericPageProvider class="org.nuxeo.labs.atlas.search.pp.MongoDBAtlasSearchPP"
+                             name="simple-atlas-search">
+            <trackUsage>false</trackUsage>
+            <property name="coreSession">#{documentManager}</property>
+            <searchDocumentType>simple-atlas_pp</searchDocumentType>
+            <whereClause>
+                <fixedPart>ecm:mixinType != 'HiddenInNavigation' AND ecm:isVersion = 0 AND ecm:isTrashed = 0</fixedPart>
+                <predicate parameter="ecm:fulltext" operator="FULLTEXT">
+                    <field schema="simple-atlas_pp" name="system_fulltext"/>
+                </predicate>
+                <predicate parameter="ecm:primaryType" operator="=">
+                    <field schema="simple-atlas_pp" name="system_primaryType"/>
+                </predicate>
+            </whereClause>
+            <pageSize>10</pageSize>
+            <aggregates>
+                <aggregate id="ecm_primarytype_agg" type="terms" parameter="ecm:primaryType">
+                    <field name="simple-atlas_pp" schema="ecm_primarytype_agg"/>
+                    <properties>
+                        <property name="size">10</property>
+                    </properties>
+                </aggregate>
+            </aggregates>
+        </genericPageProvider>
+    </extension>
+
+</component>
