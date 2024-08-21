@@ -179,7 +179,7 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
         if (!getSortInfos().isEmpty()) {
             Document sortOption = new Document();
             for(SortInfo sortInfo : getSortInfos()) {
-                sortOption.append(sortInfo.getSortColumn(), sortInfo.getSortAscending() ? 1 : 0);
+                sortOption.append(sortInfo.getSortColumn(), sortInfo.getSortAscending() ? 1 : -1);
             }
             searchOptions = searchOptions.option("sort",sortOption);
         }
