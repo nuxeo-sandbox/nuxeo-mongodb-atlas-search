@@ -33,6 +33,16 @@ public class TestAtlasSearchQueryConverter {
     }
 
     @Test
+    public void testGreaterThanTimeStamp() {
+        String nxql = "SELECT * FROM Document WHERE dc:created > TIMESTAMP '2023-07-13T22:00:00.000Z'";
+        SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.toAtlasQuery(nxql);
+        System.out.println(searchOperator);
+        Assert.assertEquals("ISODate(\"2023-07-13T22:00:00.000Z\")",
+                searchOperator.toBsonDocument().getDocument("range").getString("gt").getValue());
+    }
+
+
+    @Test
     public void testEqualIsVersion() {
         SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.makeVersionFilter("=", NXQL.ECM_ISVERSION, true);
         Assert.assertNotNull(searchOperator);
@@ -68,6 +78,22 @@ public class TestAtlasSearchQueryConverter {
         SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.toAtlasQuery(nxql);
         System.out.println(searchOperator);
         Assert.assertEquals(1,searchOperator.toBsonDocument().getDocument("compound").getArray("mustNot").size());
+    }
+
+    @Test
+    public void testIn() {
+        String nxql = "SELECT * FROM Document WHERE ecm:primaryType IN ('Domain', 'SectionRoot', 'TemplateRoot', 'WorkspaceRoot', 'Favorites')";
+        SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.toAtlasQuery(nxql);
+        System.out.println(searchOperator);
+        Assert.assertEquals(5, searchOperator.toBsonDocument().getDocument("in").getArray("value").size());
+    }
+
+    @Test
+    public void testNotIn() {
+        String nxql = "SELECT * FROM Document WHERE ecm:primaryType NOT IN ('Domain', 'SectionRoot', 'TemplateRoot', 'WorkspaceRoot', 'Favorites')";
+        SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.toAtlasQuery(nxql);
+        System.out.println(searchOperator);
+        Assert.assertEquals(1, searchOperator.toBsonDocument().getDocument("compound").getArray("mustNot").size());
     }
 
 }
