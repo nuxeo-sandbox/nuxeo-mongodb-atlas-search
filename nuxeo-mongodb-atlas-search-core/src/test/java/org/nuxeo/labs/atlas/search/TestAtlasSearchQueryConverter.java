@@ -15,6 +15,8 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
+import static org.nuxeo.ecm.core.storage.dbs.DBSDocument.KEY_ID;
+import static org.nuxeo.ecm.core.storage.dbs.DBSDocument.KEY_MIXIN_TYPES;
 import static org.nuxeo.labs.atlas.search.pp.MongoDBAtlasSearchQueryConverter.getFieldName;
 
 @RunWith(FeaturesRunner.class)
@@ -28,7 +30,8 @@ public class TestAtlasSearchQueryConverter {
 
     @Test
     public void testInconsistentFieldNameNormalization() {
-        Assert.assertEquals("ecm:id",getFieldName("ecm:uuid",null));
+        Assert.assertEquals(KEY_ID,getFieldName(NXQL.ECM_UUID,null));
+        Assert.assertEquals(KEY_MIXIN_TYPES,getFieldName(NXQL.ECM_MIXINTYPE,null));
         Assert.assertEquals("content.length",getFieldName("file:content/length",null));
         Assert.assertEquals("views",getFieldName("picture:views",null));
     }

@@ -22,8 +22,7 @@ import java.io.StringReader;
 import java.time.ZonedDateTime;
 import java.util.*;
 
-import static org.nuxeo.ecm.core.storage.dbs.DBSDocument.KEY_ANCESTOR_IDS;
-import static org.nuxeo.ecm.core.storage.dbs.DBSDocument.KEY_ID;
+import static org.nuxeo.ecm.core.storage.dbs.DBSDocument.*;
 
 public class MongoDBAtlasSearchQueryConverter {
 
@@ -278,6 +277,8 @@ public class MongoDBAtlasSearchQueryConverter {
             name = NXQL.ECM_ISVERSION;
         } else if (NXQL.ECM_UUID.equals(name)) {
             name = KEY_ID;
+        } else if (NXQL.ECM_MIXINTYPE.equals(name)) {
+            name = KEY_MIXIN_TYPES;
         } else if (NXQL.ECM_TAG.equals(name)) {
             name = "nxtag:tags.label";
         } else if (name.startsWith("file:content")) {
