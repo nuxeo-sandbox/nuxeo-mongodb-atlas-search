@@ -1,0 +1,13 @@
+<#escape x as x?xml>
+<?xml version="1.0"?>
+<#assign ppNames="${mongodb.atlas.search.override.pageproviders}"?split(",") />
+<component name="org.nuxeo.labs.atlas.search.query.api.PageProviderservice.replacers.defaultConfig">
+  <extension target="org.nuxeo.ecm.platform.query.api.PageProviderService" point="replacers">
+    <replacer withClass="org.nuxeo.labs.atlas.search.pp.MongoDBAtlasSearchPP" enabled="${r"${mongodb.atlas.search.enabled:=true}"}">
+        <#list ppNames as ppName>
+              <provider>${ppName?trim}</provider>
+        </#list>
+    </replacer>
+  </extension>
+</component>
+</#escape>

@@ -1,7 +1,5 @@
 ## Edit this file to customize your configuration ##
-#nuxeo-mongodb-atlas-search.target=
+nuxeo-mongodb-atlas-search.target=.
 
-# Set list of templates to include, comma separated values.
-nuxeo.template.includes=common
-
-# org.nuxeo.ecm.instance.description=Nuxeo ECM customized with nuxeo-mongodb-atlas-search
+mongodb.atlas.search.enabled=true
+mongodb.atlas.search.override.pageproviders=advanced_document_content,default_search
