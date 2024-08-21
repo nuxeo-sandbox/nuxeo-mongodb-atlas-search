@@ -96,7 +96,9 @@ public class MongoDBAtlasSearchQueryConverter {
                     Reference ref = node.lvalue instanceof Reference ? (Reference) node.lvalue : null;
                     String name = ref != null ? ref.name : node.lvalue.toString();
                     String value = null;
-                    if (node.rvalue instanceof Literal) {
+                    if  (node.rvalue instanceof DateLiteral) {
+                        value = String.format("ISODate(\"%s\")",((DateLiteral) node.rvalue).asString());
+                    } else if (node.rvalue instanceof Literal) {
                         value = ((Literal) node.rvalue).asString();
                     } else if (node.rvalue instanceof Function) {
                         Function function = (Function) node.rvalue;

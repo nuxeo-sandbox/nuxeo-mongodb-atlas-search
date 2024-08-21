@@ -24,6 +24,15 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 public class TestAtlasSearchQueryConverter {
 
     @Test
+    public void testEqualTimeStamp() {
+        String nxql = "SELECT * FROM Document WHERE dc:created = TIMESTAMP '2023-07-13T22:00:00.000Z'";
+        SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.toAtlasQuery(nxql);
+        System.out.println(searchOperator);
+        Assert.assertEquals("ISODate(\"2023-07-13T22:00:00.000Z\")",
+                searchOperator.toBsonDocument().getDocument("equals").getString("value").getValue());
+    }
+
+    @Test
     public void testEqualIsVersion() {
         SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.makeVersionFilter("=", NXQL.ECM_ISVERSION, true);
         Assert.assertNotNull(searchOperator);
