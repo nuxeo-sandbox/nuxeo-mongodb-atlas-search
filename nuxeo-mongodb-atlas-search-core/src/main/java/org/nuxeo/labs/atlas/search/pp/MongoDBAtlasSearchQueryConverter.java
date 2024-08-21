@@ -238,7 +238,7 @@ public class MongoDBAtlasSearchQueryConverter {
                     break;
                 case "IN":
                 case "NOT IN":
-                    filter =  SearchOperator.of(new Document("in", new Document("path",SearchPath.fieldPath(name)).append("value", Arrays.stream(values).toList())));
+                    filter =  SearchOperator.of(new Document("in",  new Document("path", name).append("value", Arrays.stream(values).toList())));
                     if (op.startsWith("NOT")) {
                         filter = SearchOperator.compound().mustNot(List.of(filter));
                     }

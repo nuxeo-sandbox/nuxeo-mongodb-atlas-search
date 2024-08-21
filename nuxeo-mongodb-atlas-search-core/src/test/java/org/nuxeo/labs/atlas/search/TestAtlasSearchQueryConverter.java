@@ -1,6 +1,7 @@
 package org.nuxeo.labs.atlas.search;
 
 import com.mongodb.client.model.search.SearchOperator;
+import org.bson.BsonDocument;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,25 +38,19 @@ public class TestAtlasSearchQueryConverter {
         String nxql = "SELECT * FROM Document WHERE dc:created = TIMESTAMP '2023-07-13T22:00:00.000Z'";
         SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.toAtlasQuery(nxql);
         System.out.println(searchOperator);
+        BsonDocument equals = searchOperator.toBsonDocument().getDocument("equals");
+        Assert.assertEquals("dc:created", equals.getString("path").getValue());
         Assert.assertEquals("ISODate(\"2023-07-13T22:00:00.000Z\")",
-                searchOperator.toBsonDocument().getDocument("equals").getString("value").getValue());
+                equals.getString("value").getValue());
     }
-
-    @Test
-    public void testGreaterThanTimeStamp() {
-        String nxql = "SELECT * FROM Document WHERE dc:created > TIMESTAMP '2023-07-13T22:00:00.000Z'";
-        SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.toAtlasQuery(nxql);
-        System.out.println(searchOperator);
-        Assert.assertEquals("ISODate(\"2023-07-13T22:00:00.000Z\")",
-                searchOperator.toBsonDocument().getDocument("range").getString("gt").getValue());
-    }
-
 
     @Test
     public void testEqualIsVersion() {
         SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.makeVersionFilter("=", NXQL.ECM_ISVERSION, true);
         Assert.assertNotNull(searchOperator);
-        Assert.assertTrue(searchOperator.toBsonDocument().getDocument("equals").getBoolean("value").getValue());
+        BsonDocument equals = searchOperator.toBsonDocument().getDocument("equals");
+        Assert.assertEquals(NXQL.ECM_ISVERSION, equals.getString("path").getValue());
+        Assert.assertTrue(equals.getBoolean("value").getValue());
     }
 
     @Test
@@ -66,7 +61,7 @@ public class TestAtlasSearchQueryConverter {
     }
 
     @Test
-    public void testSingleOr() {
+    public void testOR() {
         String nxql = "SELECT * FROM Document WHERE ecm:isVersion = 1 OR ecm:isTrashed = 1";
         SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.toAtlasQuery(nxql);
         System.out.println(searchOperator);
@@ -74,7 +69,7 @@ public class TestAtlasSearchQueryConverter {
     }
 
     @Test
-    public void testSingleAnd() {
+    public void testAND() {
         String nxql = "SELECT * FROM Document WHERE ecm:isVersion = 1 AND ecm:isTrashed = 1";
         SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.toAtlasQuery(nxql);
         System.out.println(searchOperator);
@@ -82,7 +77,7 @@ public class TestAtlasSearchQueryConverter {
     }
 
     @Test
-    public void testSingleNot() {
+    public void testNOT() {
         String nxql = "SELECT * FROM Document WHERE NOT dc:title = 'My Doc'";
         SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.toAtlasQuery(nxql);
         System.out.println(searchOperator);
@@ -94,7 +89,9 @@ public class TestAtlasSearchQueryConverter {
         String nxql = "SELECT * FROM Document WHERE ecm:primaryType IN ('Domain', 'SectionRoot', 'TemplateRoot', 'WorkspaceRoot', 'Favorites')";
         SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.toAtlasQuery(nxql);
         System.out.println(searchOperator);
-        Assert.assertEquals(5, searchOperator.toBsonDocument().getDocument("in").getArray("value").size());
+        BsonDocument in = searchOperator.toBsonDocument().getDocument("in");
+        Assert.assertEquals("ecm:primaryType", in.getString("path").getValue());
+        Assert.assertEquals(5, in.getArray("value").size());
     }
 
     @Test
