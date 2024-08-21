@@ -31,6 +31,7 @@ import com.mongodb.client.model.search.SearchOptions;
 import java.util.*;
 
 import static org.nuxeo.ecm.platform.query.api.PageProviderService.NAMED_PARAMETERS;
+import static org.nuxeo.labs.atlas.search.pp.MongoDBAtlasSearchQueryConverter.getFieldName;
 
 public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
 
@@ -131,11 +132,11 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
         List<SearchOperator> filters = new ArrayList<>();
         for (AggregateDefinition def : getAggregateDefinitions()) {
             DocumentModel searchDoc = getSearchDocumentModel();
-            String value = (String) searchDoc.getProperty(def.getSearchField().getSchema(),def.getSearchField().getName());
-            if (value != null) {
+            List<String> values = (List<String>) searchDoc.getProperty(def.getSearchField().getSchema(),def.getSearchField().getName());
+            if (values != null && !values.isEmpty()) {
                 filters.add(
                         SearchOperator.of(new Document("equals",
-                                new Document("path", def.getDocumentField()).append("value", value))));
+                                new Document("path", getFieldName(def.getDocumentField(),null)).append("value", values))));
             }
         }
         return filters;
