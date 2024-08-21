@@ -14,6 +14,8 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
+import static org.nuxeo.labs.atlas.search.pp.MongoDBAtlasSearchQueryConverter.getFieldName;
+
 @RunWith(FeaturesRunner.class)
 @Features({PlatformFeature.class})
 @RepositoryConfig(init = DefaultRepositoryInit.class, cleanup = Granularity.METHOD)
@@ -22,6 +24,13 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
         "org.nuxeo.ecm.core.storage.mongodb"
 })
 public class TestAtlasSearchQueryConverter {
+
+    @Test
+    public void testInconsistentFieldNameNormalization() {
+        Assert.assertEquals("ecm:id",getFieldName("ecm:uuid",null));
+        Assert.assertEquals("content.length",getFieldName("file:content/length",null));
+        Assert.assertEquals("views",getFieldName("picture:views",null));
+    }
 
     @Test
     public void testEqualTimeStamp() {

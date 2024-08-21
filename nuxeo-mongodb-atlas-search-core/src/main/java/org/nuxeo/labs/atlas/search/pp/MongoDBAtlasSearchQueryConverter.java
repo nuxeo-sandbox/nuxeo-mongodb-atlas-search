@@ -23,6 +23,7 @@ import java.time.ZonedDateTime;
 import java.util.*;
 
 import static org.nuxeo.ecm.core.storage.dbs.DBSDocument.KEY_ANCESTOR_IDS;
+import static org.nuxeo.ecm.core.storage.dbs.DBSDocument.KEY_ID;
 
 public class MongoDBAtlasSearchQueryConverter {
 
@@ -272,9 +273,17 @@ public class MongoDBAtlasSearchQueryConverter {
             return hint.index;
         }
         // compat
+        //todo avoid dirty hardcoded workaround
         if (NXQL.ECM_ISVERSION_OLD.equals(name)) {
             name = NXQL.ECM_ISVERSION;
+        } else if (NXQL.ECM_UUID.equals(name)) {
+            name = KEY_ID;
+        } else if (name.startsWith("file:content")) {
+            name = name.substring("file:".length());
+        } else if (name.startsWith("picture:")) {
+            name = name.substring("picture:".length());
         }
+
         // complex field
         name = name.replace("/*", "");
         name = name.replace("/", ".");
