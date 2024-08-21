@@ -10,7 +10,7 @@
             <searchDocumentType>DefaultSearch</searchDocumentType>
             <whereClause>
                 <fixedPart>
-                    ecm:primaryType NOT IN ('Domain', 'SectionRoot', 'TemplateRoot', 'WorkspaceRoot', 'Favorites', 'TaskRoot')
+                    ecm:primaryType NOT IN ('Domain', 'SectionRoot', 'TemplateRoot', 'WorkspaceRoot', 'Favorites', 'TaskRoot', 'UserProfile')
                     AND ecm:mixinType NOT IN ('HiddenInNavigation','Collection')
                     AND ecm:isVersion = 0
                     AND ecm:isTrashed = 0
