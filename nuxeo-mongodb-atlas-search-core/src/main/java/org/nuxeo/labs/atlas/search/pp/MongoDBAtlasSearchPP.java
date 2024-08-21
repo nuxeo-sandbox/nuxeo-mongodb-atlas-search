@@ -123,7 +123,11 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
     public Document buildFacets() {
         Document facets = new Document();
         for (AggregateDefinition def : getAggregateDefinitions()) {
-            facets.append(def.getId(), new Document("type", "string").append("path", def.getDocumentField()));
+            //todo handle all types of facets
+            if(!"terms".equals(def.getType())) {
+                continue;
+            }
+            facets.append(def.getId(), new Document("type", "string").append("path", getFieldName(def.getDocumentField(),null)));
         }
         return facets;
     }
@@ -131,6 +135,10 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
     public List<SearchOperator> buildFacetFilter() {
         List<SearchOperator> filters = new ArrayList<>();
         for (AggregateDefinition def : getAggregateDefinitions()) {
+            //todo handle all types of facets
+            if(!"terms".equals(def.getType())) {
+                continue;
+            }
             DocumentModel searchDoc = getSearchDocumentModel();
             List<String> values = (List<String>) searchDoc.getProperty(def.getSearchField().getSchema(),def.getSearchField().getName());
             if (values != null && !values.isEmpty()) {
