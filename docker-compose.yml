@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   nuxeo:
     image: nuxeo-mongodb-atlas-search:2023.0.0-SNAPSHOT
@@ -14,12 +13,8 @@ services:
       - NUXEO_CLID=${NUXEO_CLID}
     hostname: nuxeo
     restart: always
-    depends_on:
-      - mongodb
     volumes:
       - ./conf.d:/etc/nuxeo/conf.d
       - nuxeo_data:/var/lib/nuxeo
 volumes:
   nuxeo_data: {}
-  os_data:
-  mongodb_data:
