@@ -278,6 +278,8 @@ public class MongoDBAtlasSearchQueryConverter {
             name = NXQL.ECM_ISVERSION;
         } else if (NXQL.ECM_UUID.equals(name)) {
             name = KEY_ID;
+        } else if (NXQL.ECM_TAG.equals(name)) {
+            name = "nxtag:tags.label";
         } else if (name.startsWith("file:content")) {
             name = name.substring("file:".length());
         } else if (name.startsWith("picture:")) {
