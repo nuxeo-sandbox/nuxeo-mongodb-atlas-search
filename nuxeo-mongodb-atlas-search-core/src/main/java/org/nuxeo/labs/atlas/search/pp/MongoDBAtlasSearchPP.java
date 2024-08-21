@@ -3,7 +3,6 @@ package org.nuxeo.labs.atlas.search.pp;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.search.SearchOperator;
-import com.mongodb.client.model.search.SearchPath;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bson.BsonDocument;
