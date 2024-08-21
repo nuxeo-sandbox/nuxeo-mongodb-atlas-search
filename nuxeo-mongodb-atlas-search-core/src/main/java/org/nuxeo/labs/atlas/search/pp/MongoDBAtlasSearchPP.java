@@ -75,15 +75,20 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
     }
 
     public List<DocumentModel> extractHits(CoreSession session, Document result) {
-        List<DocumentModel> hits;
+        if (!result.containsKey("docs")) {
+            return new ArrayList<>();
+        }
         List<Document> docs = result.getList("docs", Document.class);
         IdRef[] ids = docs.stream().map(doc -> doc.toBsonDocument().getString("ecm:id").getValue()).map(IdRef::new).toArray(IdRef[]::new);
-        hits = session.getDocuments(ids);
-        return hits;
+        return session.getDocuments(ids);
     }
 
     public HashMap<String, Aggregate<? extends Bucket>> extractFacetBuckets(Document result) {
         HashMap<String, Aggregate<? extends Bucket>> aggregates = new HashMap<>();
+
+        if (!result.containsKey("meta")) {
+            return aggregates;
+        }
 
         BsonDocument meta = result.toBsonDocument().getDocument("meta");
         if (meta == null) {
