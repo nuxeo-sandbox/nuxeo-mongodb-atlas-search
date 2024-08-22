@@ -1,6 +1,7 @@
 package org.nuxeo.labs.atlas.search.pp;
 
 import com.mongodb.client.model.search.CompoundSearchOperator;
+import com.mongodb.client.model.search.CompoundSearchOperatorBase;
 import com.mongodb.client.model.search.SearchOperator;
 
 import com.mongodb.client.model.search.SearchPath;
@@ -10,6 +11,7 @@ import org.nuxeo.ecm.core.query.QueryParseException;
 import org.nuxeo.ecm.core.query.sql.NXQL;
 import org.nuxeo.ecm.core.query.sql.SQLQueryParser;
 import org.nuxeo.ecm.core.query.sql.model.*;
+import org.nuxeo.ecm.core.schema.DocumentType;
 import org.nuxeo.ecm.core.schema.SchemaManager;
 import org.nuxeo.ecm.core.schema.types.Field;
 import org.nuxeo.ecm.core.schema.types.primitives.BooleanType;
@@ -21,6 +23,7 @@ import org.nuxeo.ecm.core.storage.sql.jdbc.NXQLQueryMaker;
 import java.io.StringReader;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static org.nuxeo.ecm.core.storage.dbs.DBSDocument.*;
 
@@ -206,6 +209,14 @@ public class MongoDBAtlasSearchQueryConverter {
             filter = makeTrashedFilter(op, name, (String) value);
         } else if (nxqlName.equals(NXQL.ECM_ISVERSION)) {
             filter = makeVersionFilter(op, name, checkBoolValue(nxqlName, value));
+        } else if (nxqlName.equals(NXQL.ECM_MIXINTYPE)) {
+            List<String> mixinTypes = new ArrayList<>();
+            if( values == null) {
+                mixinTypes.add((String) value);
+            } else {
+                Arrays.stream(values).forEach(val -> mixinTypes.add((String)val));
+            }
+            filter = makeMixinTypesFilter(op,name, mixinTypes);
         } else
             switch (op) {
                 case "=":
@@ -292,6 +303,63 @@ public class MongoDBAtlasSearchQueryConverter {
         name = name.replace("/", ".");
         return name;
     }
+
+
+    public static SearchOperator makeMixinTypesFilter(String op, String name, List<String> mixins) {
+        boolean include = !List.of("NOT IN", "!=" ,"<>").contains(op);
+        /*
+         * Primary types that match.
+         */
+        Set<String> matchPrimaryTypes;
+        if (include) {
+            matchPrimaryTypes = new HashSet<>();
+            for (String mixin : mixins) {
+                matchPrimaryTypes.addAll(getMixinDocumentTypes(mixin));
+            }
+        } else {
+            matchPrimaryTypes = new HashSet<>(getDocumentTypes());
+            for (String mixin : mixins) {
+                matchPrimaryTypes.removeAll(getMixinDocumentTypes(mixin));
+            }
+        }
+
+        SearchOperator typeFilter =  !matchPrimaryTypes.isEmpty() ?
+                SearchOperator.of(new Document("in",  new Document("path", KEY_PRIMARY_TYPE).append("value", matchPrimaryTypes)))
+                : null;
+
+        /*
+         * Instance mixins that match.
+         */
+        Set<String> matchMixinTypes = new HashSet<>();
+        for (String mixin : mixins) {
+            if (!isNeverPerInstanceMixin(mixin)) {
+                matchMixinTypes.add(mixin);
+            }
+        }
+
+        SearchOperator mixinFilter = !matchMixinTypes.isEmpty() ?
+                SearchOperator.of(new Document("in",  new Document("path", KEY_MIXIN_TYPES).append("value", matchMixinTypes)))
+                :null;
+
+        SearchOperator compoundFilter = null;
+        if (include) {
+            List<SearchOperator> effectiveList = Stream.of(typeFilter,mixinFilter).filter(Objects::nonNull).toList();
+            if (!effectiveList.isEmpty()) {
+                compoundFilter = SearchOperator.compound().should(effectiveList).minimumShouldMatch(1);
+            }
+        } else {
+            Document compound = new Document();
+            if (typeFilter != null) {
+                compound = compound.append("must",List.of(typeFilter.toBsonDocument()));
+            }
+            if (mixinFilter != null) {
+                compound = compound.append("mustNot",List.of(mixinFilter.toBsonDocument()));
+            }
+            compoundFilter = SearchOperator.of(new Document("compound", compound));
+        }
+        return compoundFilter;
+    }
+
 
     public static SearchOperator makeFulltextQuery(String nxqlName, String value, EsHint hint) {
         return SearchOperator.text(SearchPath.wildcardPath("*"), value);
@@ -434,5 +502,25 @@ public class MongoDBAtlasSearchQueryConverter {
 
     }
 
+
+    public static Set<String> getMixinDocumentTypes(String mixin) {
+        SchemaManager schemaManager = Framework.getService(SchemaManager.class);
+        Set<String> types = schemaManager.getDocumentTypeNamesForFacet(mixin);
+        return types == null ? Collections.emptySet() : types;
+    }
+
+    public static List<String> getDocumentTypes() {
+        SchemaManager schemaManager = Framework.getService(SchemaManager.class);
+        List<String> documentTypes = new ArrayList<>();
+        for (DocumentType docType : schemaManager.getDocumentTypes()) {
+            documentTypes.add(docType.getName());
+        }
+        return documentTypes;
+    }
+
+    public static boolean isNeverPerInstanceMixin(String mixin) {
+        SchemaManager schemaManager = Framework.getService(SchemaManager.class);
+        return schemaManager.getNoPerDocumentQueryFacets().contains(mixin);
+    }
 
 }

@@ -2,4 +2,4 @@
 nuxeo-mongodb-atlas-search.target=.
 
 mongodb.atlas.search.enabled=true
-mongodb.atlas.search.override.pageproviders=advanced_document_content,default_search
+mongodb.atlas.search.override.pageproviders=default_search

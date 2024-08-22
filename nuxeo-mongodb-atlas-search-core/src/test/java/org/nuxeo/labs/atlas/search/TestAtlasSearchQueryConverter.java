@@ -15,6 +15,8 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
+import java.util.List;
+
 import static org.nuxeo.ecm.core.storage.dbs.DBSDocument.KEY_ID;
 import static org.nuxeo.ecm.core.storage.dbs.DBSDocument.KEY_MIXIN_TYPES;
 import static org.nuxeo.labs.atlas.search.pp.MongoDBAtlasSearchQueryConverter.getFieldName;
@@ -61,6 +63,21 @@ public class TestAtlasSearchQueryConverter {
         SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.makeVersionFilter("=", NXQL.ECM_ISVERSION, false);
         System.out.println(searchOperator);
         Assert.assertNull(searchOperator);
+    }
+
+    @Test
+    public void testHasMixIn() {
+        SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.makeMixinTypesFilter("=", NXQL.ECM_MIXINTYPE, List.of("HiddenInNavigation"));
+        System.out.println(searchOperator);
+        Assert.assertEquals(1,searchOperator.toBsonDocument().getDocument("compound").getArray("should").size());
+    }
+
+    @Test
+    public void testDoesNotHasMixIn() {
+        SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.makeMixinTypesFilter("!=", NXQL.ECM_MIXINTYPE, List.of("HiddenInNavigation"));
+        System.out.println(searchOperator);
+        Assert.assertEquals(1,searchOperator.toBsonDocument().getDocument("compound").getArray("must").size());
+        //Assert.assertEquals(1,searchOperator.toBsonDocument().getDocument("compound").getArray("mustNot").size());
     }
 
     @Test
