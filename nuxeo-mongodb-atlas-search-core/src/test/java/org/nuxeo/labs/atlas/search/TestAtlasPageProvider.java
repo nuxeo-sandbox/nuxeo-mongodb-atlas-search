@@ -44,7 +44,7 @@ public class TestAtlasPageProvider {
         Assert.assertFalse(results.isEmpty());
         Assert.assertEquals(1, pp.getResultsCount());
         Map<String, Aggregate<? extends Bucket>> aggregates = pp.getAggregates();
-        Assert.assertEquals(1, aggregates.size());
+        Assert.assertEquals(2, aggregates.size());
     }
 
     @Test
@@ -60,6 +60,18 @@ public class TestAtlasPageProvider {
         Assert.assertEquals(1, pp.getResultsCount());
         Map<String, Aggregate<? extends Bucket>> aggregates = pp.getAggregates();
         Assert.assertTrue(aggregates == null || aggregates.isEmpty());
+    }
+
+    @Test
+    public void testGt() {
+        HashMap<String, String> namedParameters = new HashMap<>();
+        namedParameters.put("common_size_gt", "100");
+        PageProvider<DocumentModel> pp = getPP(namedParameters);
+        Map<String, Serializable> props = pp.getProperties();
+        props.put(PageProvider.SKIP_AGGREGATES_PROP,true);
+        pp.setProperties(props);
+        List<DocumentModel> results = pp.getCurrentPage();
+        Assert.assertFalse(results.isEmpty());
     }
 
     public PageProvider<DocumentModel> getPP(Map<String, String> namedParameters) {

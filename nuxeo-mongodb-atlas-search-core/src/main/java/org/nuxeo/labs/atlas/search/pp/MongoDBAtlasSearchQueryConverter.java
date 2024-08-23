@@ -98,9 +98,15 @@ public class MongoDBAtlasSearchQueryConverter {
                 } else {
                     Reference ref = node.lvalue instanceof Reference ? (Reference) node.lvalue : null;
                     String name = ref != null ? ref.name : node.lvalue.toString();
-                    String value = null;
+                    Object value = null;
                     if  (node.rvalue instanceof DateLiteral) {
                         value = String.format("ISODate(\"%s\")",((DateLiteral) node.rvalue).asString());
+                    } else if (node.rvalue instanceof DoubleLiteral) {
+                        value = ((DoubleLiteral) node.rvalue).value;
+                    } else if (node.rvalue instanceof IntegerLiteral) {
+                        value = ((IntegerLiteral) node.rvalue).value;
+                    } else if  (node.rvalue instanceof BooleanLiteral) {
+                        value = ((BooleanLiteral) node.rvalue).value;
                     } else if (node.rvalue instanceof Literal) {
                         value = ((Literal) node.rvalue).asString();
                     } else if (node.rvalue instanceof Function) {
@@ -228,16 +234,16 @@ public class MongoDBAtlasSearchQueryConverter {
                             List.of(SearchOperator.of(new Document("equals", new Document("path", name).append("value", checkBoolValue(nxqlName, value))))));
                     break;
                 case ">":
-                    filter = SearchOperator.numberRange(SearchPath.fieldPath(name)).gt((Number) value);
+                    filter = SearchOperator.of(new Document("range", new Document("path", name).append("gt", value)));
                     break;
                 case "<":
-                    filter = SearchOperator.numberRange(SearchPath.fieldPath(name)).lt((Number) value);
+                    filter = SearchOperator.of(new Document("range", new Document("path", name).append("lt", value)));
                     break;
                 case ">=":
-                    filter = SearchOperator.numberRange(SearchPath.fieldPath(name)).gte((Number) value);
+                    filter = SearchOperator.of(new Document("range", new Document("path", name).append("gte", value)));
                     break;
                 case "<=":
-                    filter = SearchOperator.numberRange(SearchPath.fieldPath(name)).lte((Number) value);
+                    filter = SearchOperator.of(new Document("range", new Document("path", name).append("lte", value)));
                     break;
                 case "BETWEEN":
                 case "NOT BETWEEN":
@@ -398,29 +404,15 @@ public class MongoDBAtlasSearchQueryConverter {
     }
 
     public static Object checkBoolValue(String nxqlName, Object value) {
-        if (!"0".equals(value) && !"1".equals(value)) {
+        if ( value instanceof Boolean) {
             return value;
+        } else if (value instanceof Long){
+            return (Long)value == 1;
+        } else if (value instanceof String){
+            return "1".equals(value) || "true".equals(value);
+        } else {
+            throw new NuxeoException(String.format( "Invalid boolean value %s:%s",nxqlName,value.toString()));
         }
-        switch (nxqlName) {
-            case NXQL.ECM_ISPROXY:
-            case NXQL.ECM_ISCHECKEDIN:
-            case NXQL.ECM_ISTRASHED:
-            case NXQL.ECM_ISVERSION:
-            case NXQL.ECM_ISVERSION_OLD:
-            case NXQL.ECM_ISRECORD:
-            case NXQL.ECM_ISFLEXIBLERECORD:
-            case NXQL.ECM_HASLEGALHOLD:
-            case NXQL.ECM_ISLATESTMAJORVERSION:
-            case NXQL.ECM_ISLATESTVERSION:
-                break;
-            default:
-                SchemaManager schemaManager = Framework.getService(SchemaManager.class);
-                Field field = schemaManager.getField(nxqlName);
-                if (field == null || !BooleanType.ID.equals(field.getType().getName())) {
-                    return value;
-                }
-        }
-        return !"0".equals(value);
     }
 
 
