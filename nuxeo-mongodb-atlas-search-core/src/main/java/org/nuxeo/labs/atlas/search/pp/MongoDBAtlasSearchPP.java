@@ -111,7 +111,20 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
         }
         List<Document> docs = result.getList("docs", Document.class);
         IdRef[] ids = docs.stream().map(doc -> doc.toBsonDocument().getString("ecm:id").getValue()).map(IdRef::new).toArray(IdRef[]::new);
-        return session.getDocuments(ids);
+        if (ids.length == 0) {
+            return new ArrayList<>();
+        }
+
+        DocumentModelList list =  session.getDocuments(ids);
+
+        return docs.stream().map(entry -> {
+            BsonDocument hit = entry.toBsonDocument();
+            String id = hit.getString("ecm:id").getValue();
+            double score = hit.getDouble("_score").getValue();
+            DocumentModel documentModel = list.stream().filter(doc -> id.equals(doc.getId())).findFirst().get();
+            documentModel.putContextData("score", score);
+            return documentModel;
+        }).toList();
     }
 
     public HashMap<String, Aggregate<? extends Bucket>> extractFacetBuckets(Document result) {
@@ -201,11 +214,11 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
 
         buildQuery(getCoreSession());
 
-        System.out.println(query);
+        log.debug(query);
 
         SearchOperator nxqlSearchOp = MongoDBAtlasSearchQueryConverter.toAtlasQuery(query,getCoreSession());
 
-        System.out.println(format(nxqlSearchOp.toBsonDocument()));
+        log.debug(format(nxqlSearchOp.toBsonDocument()));
 
         //set permission filters
         SearchOperator permissionFilter = getSecurityFilter();
@@ -242,13 +255,13 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
                     new Document("facet",
                             new Document("operator", innerOp)
                                     .append("facets", buildFacets())));
-            System.out.println(format(operator.toBsonDocument()));
+            log.debug(format(operator.toBsonDocument()));
         } else {
             operator = nxqlSearchOp;
         }
 
         Bson searchStage = Aggregates.search(operator, searchOptions);
-        System.out.println(format(searchStage.toBsonDocument()));
+        log.debug(format(searchStage.toBsonDocument()));
         stages.add(searchStage);
 
         // $facet stage
@@ -269,7 +282,7 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
                                 Arrays.asList(new Document("$replaceWith", "$$SEARCH_META"), Aggregates.limit(1)))
         );
 
-        System.out.println(format(facetStage.toBsonDocument()));
+        log.debug(format(facetStage.toBsonDocument()));
         stages.add(facetStage);
 
         //set stage
@@ -278,7 +291,7 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
                         new Document("$arrayElemAt",
                                 Arrays.asList("$meta", 0))));
 
-        System.out.println(format(setStage.toBsonDocument()));
+        log.debug(format(setStage.toBsonDocument()));
 
         stages.add(setStage);
 
@@ -287,7 +300,7 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
 
         Document first = aggregationResults.first();
 
-        System.out.println(format(first.toBsonDocument()));
+        log.debug(format(first.toBsonDocument()));
 
         //set results
         setResultsCount(extractCounts(first));
