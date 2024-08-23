@@ -147,7 +147,7 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
             List<String> values = (List<String>) searchDoc.getProperty(def.getSearchField().getSchema(),def.getSearchField().getName());
             if (values != null && !values.isEmpty()) {
                 filters.add(
-                        SearchOperator.of(new Document("equals",
+                        SearchOperator.of(new Document("in",
                                 new Document("path", getFieldName(def.getDocumentField(),null)).append("value", values))));
             }
         }
