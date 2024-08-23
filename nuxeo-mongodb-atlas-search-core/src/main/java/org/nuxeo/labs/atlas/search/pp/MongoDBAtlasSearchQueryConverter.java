@@ -288,8 +288,7 @@ public class MongoDBAtlasSearchQueryConverter {
         if (hint != null && hint.index != null) {
             return hint.index;
         }
-        // compat
-        //todo avoid dirty hardcoded workaround
+
         if (NXQL.ECM_ISVERSION_OLD.equals(name)) {
             name = NXQL.ECM_ISVERSION;
         } else if (NXQL.ECM_UUID.equals(name)) {
