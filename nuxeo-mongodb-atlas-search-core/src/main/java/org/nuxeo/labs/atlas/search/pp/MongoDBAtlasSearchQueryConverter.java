@@ -1,7 +1,6 @@
 package org.nuxeo.labs.atlas.search.pp;
 
 import com.mongodb.client.model.search.CompoundSearchOperator;
-import com.mongodb.client.model.search.CompoundSearchOperatorBase;
 import com.mongodb.client.model.search.SearchOperator;
 
 import com.mongodb.client.model.search.SearchPath;
@@ -211,10 +210,8 @@ public class MongoDBAtlasSearchQueryConverter {
             if ("!=".equals(op) || "<>".equals(op)) {
                 filter = SearchOperator.compound().mustNot(List.of(filter));
             }
-        } else if (nxqlName.equals(NXQL.ECM_ISTRASHED)) {
-            filter = makeTrashedFilter(op, name, (String) value);
-        } else if (nxqlName.equals(NXQL.ECM_ISVERSION)) {
-            filter = makeVersionFilter(op, name, checkBoolValue(nxqlName, value));
+        } else if (isEcmBooleanProperty(nxqlName)) {
+            filter = makeBooleanEcmPropertyFilter(op, nxqlName, value);
         } else if (nxqlName.equals(NXQL.ECM_MIXINTYPE)) {
             List<String> mixinTypes = new ArrayList<>();
             if( values == null) {
@@ -247,7 +244,7 @@ public class MongoDBAtlasSearchQueryConverter {
                     break;
                 case "BETWEEN":
                 case "NOT BETWEEN":
-                    filter = SearchOperator.numberRange(SearchPath.fieldPath(name)).gteLte((Number)values[0], (Number)values[1]);
+                    filter = SearchOperator.of(new Document("range", new Document("path", name).append("gte", values[0]).append("lte", values[1])));
                     if (op.startsWith("NOT")) {
                         filter = SearchOperator.compound().mustNot(List.of(filter));
                     }
@@ -370,39 +367,57 @@ public class MongoDBAtlasSearchQueryConverter {
         return SearchOperator.text(SearchPath.wildcardPath("*"), value);
     }
 
-    public static SearchOperator makeTrashedFilter(String op, String name, String value) {
-        boolean equalsDeleted;
+    public static boolean isEcmBooleanProperty(String nxqlName) {
+        return switch (nxqlName) {
+            case NXQL.ECM_ISPROXY, NXQL.ECM_ISCHECKEDIN, NXQL.ECM_ISTRASHED, NXQL.ECM_ISVERSION, NXQL.ECM_ISVERSION_OLD,
+                 NXQL.ECM_ISRECORD, NXQL.ECM_ISFLEXIBLERECORD, NXQL.ECM_HASLEGALHOLD, NXQL.ECM_ISLATESTMAJORVERSION,
+                 NXQL.ECM_ISLATESTVERSION -> true;
+            default -> false;
+        };
+    }
+
+    public static SearchOperator makeBooleanEcmPropertyFilter(String op, String name, Object value) {
+        boolean equalsTrue;
         switch (op) {
             case "=":
-                equalsDeleted = true;
+                equalsTrue = true;
                 break;
             case "<>":
             case "!=":
-                equalsDeleted = false;
+                equalsTrue = false;
                 break;
             default:
-                throw new IllegalArgumentException(NXQL.ECM_ISTRASHED + " requires = or <> operator");
-        }
-        if ("0".equals(value)) {
-            equalsDeleted = !equalsDeleted;
-        } else if ("1".equals(value)) {
-            // equalsDeleted unchanged
-        } else {
-            throw new IllegalArgumentException(NXQL.ECM_ISTRASHED + " requires literal 0 or 1 as right argument");
+                throw new IllegalArgumentException(name + " requires = or <> operator");
         }
 
-        return equalsDeleted ?
-                SearchOperator.of(new Document("equals", new Document("path", name).append("value", equalsDeleted)))
-                : null;
-    }
+        if (!(Boolean)checkBoolValue(name, value)) {
+            equalsTrue = !equalsTrue;
+        }
 
-    public static SearchOperator makeVersionFilter(String op, String name, Object value) {
-        return (Boolean) value ?
-                SearchOperator.of(new Document("equals", new Document("path", name).append("value", value)))
+        return equalsTrue ?
+                SearchOperator.of(new Document("equals", new Document("path", name).append("value", equalsTrue)))
                 : null;
     }
 
     public static Object checkBoolValue(String nxqlName, Object value) {
+        // is the nxql field a boolean?
+        boolean isBoolean = false;
+
+        if (isEcmBooleanProperty(nxqlName)) {
+            isBoolean = true;
+        } else {
+            SchemaManager schemaManager = Framework.getService(SchemaManager.class);
+            Field field = schemaManager.getField(nxqlName);
+            if (BooleanType.ID.equals(field.getType().getName())) {
+                isBoolean = true;
+            }
+        }
+
+        if (!isBoolean) {
+            //nothing to do because the target field is not a boolean
+            return value;
+        }
+
         if ( value instanceof Boolean) {
             return value;
         } else if (value instanceof Long){

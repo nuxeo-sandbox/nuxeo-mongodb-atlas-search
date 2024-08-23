@@ -51,7 +51,7 @@ public class TestAtlasSearchQueryConverter {
 
     @Test
     public void testEqualIsVersion() {
-        SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.makeVersionFilter("=", NXQL.ECM_ISVERSION, true);
+        SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.makeBooleanEcmPropertyFilter("=", NXQL.ECM_ISVERSION, true);
         Assert.assertNotNull(searchOperator);
         BsonDocument equals = searchOperator.toBsonDocument().getDocument("equals");
         Assert.assertEquals(NXQL.ECM_ISVERSION, equals.getString("path").getValue());
@@ -60,7 +60,7 @@ public class TestAtlasSearchQueryConverter {
 
     @Test
     public void testEqualIsNotVersion() {
-        SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.makeVersionFilter("=", NXQL.ECM_ISVERSION, false);
+        SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.makeBooleanEcmPropertyFilter("=", NXQL.ECM_ISVERSION, false);
         System.out.println(searchOperator);
         Assert.assertNull(searchOperator);
     }
