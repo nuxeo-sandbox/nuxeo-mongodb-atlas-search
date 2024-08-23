@@ -12,6 +12,7 @@ import org.bson.conversions.Bson;
 import org.bson.json.JsonMode;
 import org.bson.json.JsonWriterSettings;
 import org.nuxeo.ecm.core.api.*;
+import org.nuxeo.ecm.core.security.SecurityService;
 import org.nuxeo.ecm.platform.query.api.Aggregate;
 import org.nuxeo.ecm.platform.query.api.AggregateDefinition;
 import org.nuxeo.ecm.platform.query.api.Bucket;
@@ -29,6 +30,7 @@ import com.mongodb.client.model.search.SearchOptions;
 
 import java.util.*;
 
+import static org.nuxeo.ecm.core.storage.dbs.DBSDocument.KEY_READ_ACL;
 import static org.nuxeo.ecm.platform.query.api.PageProviderService.NAMED_PARAMETERS;
 import static org.nuxeo.labs.atlas.search.pp.MongoDBAtlasSearchQueryConverter.getFieldName;
 
@@ -64,6 +66,21 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
         getCurrentPage();
         return currentAggregates;
     }
+
+    @Override
+    protected void pageChanged() {
+        currentPageDocuments = null;
+        currentAggregates = null;
+        super.pageChanged();
+    }
+
+    @Override
+    public void refresh() {
+        currentPageDocuments = null;
+        currentAggregates = null;
+        super.refresh();
+    }
+
 
     public MongoCollection<Document> getCollection(CoreSession session) {
         String repositoryName = session.getRepositoryName();
@@ -169,6 +186,15 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
         return filters;
     }
 
+    protected SearchOperator getSecurityFilter() {
+        NuxeoPrincipal principal = getCoreSession().getPrincipal();
+        if (principal == null || principal.isAdministrator()) {
+            return null;
+        }
+        List<String> principals = Arrays.asList(SecurityService.getPrincipalsToCheck(principal));
+        return SearchOperator.of(new Document("in",  new Document("path", KEY_READ_ACL).append("value", principals)));
+    }
+
     public void search() {
         DocumentModel searchDoc = getSearchDocumentModel();
         Map<String, String> namedParameters = (Map<String, String>) searchDoc.getContextData(NAMED_PARAMETERS);
@@ -177,8 +203,15 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
 
         System.out.println(query);
 
-        SearchOperator nxqlSearchOp =MongoDBAtlasSearchQueryConverter.toAtlasQuery(query,getCoreSession());
+        SearchOperator nxqlSearchOp = MongoDBAtlasSearchQueryConverter.toAtlasQuery(query,getCoreSession());
+
         System.out.println(format(nxqlSearchOp.toBsonDocument()));
+
+        //set permission filters
+        SearchOperator permissionFilter = getSecurityFilter();
+        if (permissionFilter != null) {
+            nxqlSearchOp = SearchOperator.compound().must(List.of(nxqlSearchOp)).filter(List.of(permissionFilter));
+        }
 
         CoreSession session = getCoreSession();
         MongoCollection<Document> collection = getCollection(session);
@@ -199,7 +232,6 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
         }
 
         SearchOperator operator;
-
         if (runWithFacets()) {
             SearchOperator innerOp = nxqlSearchOp;
             List<SearchOperator> facetFilters = buildFacetFilter();
