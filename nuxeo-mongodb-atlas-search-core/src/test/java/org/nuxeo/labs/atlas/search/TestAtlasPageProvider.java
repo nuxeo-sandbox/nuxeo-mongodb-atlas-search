@@ -42,6 +42,7 @@ public class TestAtlasPageProvider {
         PageProvider<DocumentModel> pp = getPP(namedParameters);
         List<DocumentModel> results = pp.getCurrentPage();
         Assert.assertFalse(results.isEmpty());
+        Assert.assertEquals(1, pp.getResultsCount());
         Map<String, Aggregate<? extends Bucket>> aggregates = pp.getAggregates();
         Assert.assertEquals(1, aggregates.size());
     }
@@ -56,6 +57,7 @@ public class TestAtlasPageProvider {
         pp.setProperties(props);
         List<DocumentModel> results = pp.getCurrentPage();
         Assert.assertFalse(results.isEmpty());
+        Assert.assertEquals(1, pp.getResultsCount());
         Map<String, Aggregate<? extends Bucket>> aggregates = pp.getAggregates();
         Assert.assertTrue(aggregates == null || aggregates.isEmpty());
     }

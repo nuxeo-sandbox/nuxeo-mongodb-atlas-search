@@ -73,6 +73,21 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
         return database.getCollection(repositoryName);
     }
 
+    public int extractCounts(Document result) {
+        if (!result.containsKey("meta")) {
+            return 0;
+        }
+        BsonDocument meta = result.toBsonDocument().getDocument("meta");
+        if (meta == null) {
+            return 0;
+        }
+        BsonDocument count = meta.getDocument("count");
+        if (count == null) {
+            return 0;
+        }
+        return count.getInt64("total").intValue();
+    }
+
     public List<DocumentModel> extractHits(CoreSession session, Document result) {
         if (!result.containsKey("docs")) {
             return new ArrayList<>();
@@ -241,6 +256,9 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
         Document first = aggregationResults.first();
 
         System.out.println(format(first.toBsonDocument()));
+
+        //set results
+        setResultsCount(extractCounts(first));
 
         currentPageDocuments = extractHits(session, first);
 
