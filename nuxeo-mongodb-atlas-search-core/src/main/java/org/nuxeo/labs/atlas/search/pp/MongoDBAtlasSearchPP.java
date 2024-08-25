@@ -15,11 +15,11 @@ import org.nuxeo.ecm.core.api.*;
 import org.nuxeo.ecm.core.security.SecurityService;
 import org.nuxeo.ecm.platform.query.api.Aggregate;
 import org.nuxeo.ecm.platform.query.api.AggregateDefinition;
-import org.nuxeo.ecm.platform.query.api.AggregateRangeDefinition;
 import org.nuxeo.ecm.platform.query.api.Bucket;
-import org.nuxeo.ecm.platform.query.core.AggregateBase;
-import org.nuxeo.ecm.platform.query.core.BucketTerm;
 import org.nuxeo.ecm.platform.query.nxql.CoreQueryDocumentPageProvider;
+import org.nuxeo.labs.atlas.search.pp.facets.AtlasFacetBase;
+import org.nuxeo.labs.atlas.search.pp.facets.AtlasRangeFacet;
+import org.nuxeo.labs.atlas.search.pp.facets.AtlasTermFacet;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.mongodb.MongoDBConnectionConfig;
 import org.nuxeo.runtime.mongodb.MongoDBConnectionService;
@@ -33,7 +33,6 @@ import java.util.*;
 
 import static org.nuxeo.ecm.core.storage.dbs.DBSDocument.KEY_READ_ACL;
 import static org.nuxeo.ecm.platform.query.api.PageProviderService.NAMED_PARAMETERS;
-import static org.nuxeo.labs.atlas.search.pp.MongoDBAtlasSearchQueryConverter.getFieldName;
 
 public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
 
@@ -128,6 +127,16 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
         }).toList();
     }
 
+    public AtlasFacetBase getAggregate(String name) {
+        List<AggregateDefinition> aggregateDefinitions = getAggregateDefinitions();
+        AggregateDefinition def = aggregateDefinitions.stream().filter(predicate -> name.equals(predicate.getId())).findFirst().orElse(null);
+        return switch(def.getType()) {
+            case "terms" -> new AtlasTermFacet(def,getSearchDocumentModel());
+            case "range" -> new AtlasRangeFacet(def,getSearchDocumentModel());
+            default -> null;
+        };
+    }
+
     public HashMap<String, Aggregate<? extends Bucket>> extractFacetBuckets(Document result) {
         HashMap<String, Aggregate<? extends Bucket>> aggregates = new HashMap<>();
 
@@ -144,25 +153,16 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
             return aggregates;
         }
 
-        List<AggregateDefinition> aggregateDefinitions = getAggregateDefinitions();
-
         for (Map.Entry<String, BsonValue> facet : facets.toBsonDocument().entrySet()) {
             String name = facet.getKey();
-            BsonValue[] buckets = facet.getValue().asDocument().getArray("buckets").toArray(BsonValue[]::new);
-            List<BucketTerm> parsedBucket = Arrays.stream(buckets).map(
-                            bucket -> new BucketTerm(
-                                    bucket.asDocument().get("_id").toString(),
-                                    bucket.asDocument().getInt64("count").getValue())
-                    )
-                    .toList();
-            AggregateDefinition def = aggregateDefinitions.stream().filter(predicate -> name.equals(predicate.getId())).findFirst().orElse(null);
-            AggregateBase<BucketTerm> base = new AggregateBase<>(def, getSearchDocumentModel());
-            base.setBuckets(parsedBucket);
-            aggregates.put(name, base);
+            AtlasFacetBase<Bucket> atlasFacet = getAggregate(name);
+            atlasFacet.parseAggregation(facet.getValue());
+            aggregates.put(name, atlasFacet);
         }
 
         return aggregates;
     }
+
 
     public boolean runWithFacets() {
         List<AggregateDefinition> aggregateDefinitions = getAggregateDefinitions();
@@ -173,29 +173,11 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
     public Document buildFacets() {
         Document facets = new Document();
         for (AggregateDefinition def : getAggregateDefinitions()) {
-            //todo handle all types of facets
-            if("terms".equals(def.getType())) {
-                facets.append(def.getId(), new Document("type", "string").append("path", getFieldName(def.getDocumentField(),null)));
-            } else if ("range".equals(def.getType())) {
-                List<Double> boundaries = new ArrayList<>();
-                def.getRanges().forEach(range -> {
-                    if (range.getFrom() == null) {
-                        boundaries.add(Double.MIN_VALUE);
-                    } else {
-                        boundaries.add(range.getFrom());
-                    }
-                    if (range.getTo() == null) {
-                        boundaries.add(Double.MAX_VALUE);
-                    }
-                });
-
-                facets.append(def.getId(), new Document("type", "number")
-                        .append("path", getFieldName(def.getDocumentField(),null))
-                        .append("boundaries", boundaries));
-            } else {
-                continue;
+            AtlasFacetBase atlasFacet = getAggregate(def.getId());
+            Document facet = atlasFacet.getFacet();
+            if (facet != null) {
+                facets.append(def.getId(), facet);
             }
-
         }
         return facets;
     }
@@ -203,30 +185,11 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
     public List<SearchOperator> buildFacetFilter() {
         List<SearchOperator> filters = new ArrayList<>();
         for (AggregateDefinition def : getAggregateDefinitions()) {
-            //todo handle all types of facets
-            if("terms".equals(def.getType())) {
-                DocumentModel searchDoc = getSearchDocumentModel();
-                List<String> values = (List<String>) searchDoc.getProperty(def.getSearchField().getSchema(),def.getSearchField().getName());
-                if (values != null && !values.isEmpty()) {
-                    filters.add(
-                            SearchOperator.of(new Document("in",
-                                    new Document("path", getFieldName(def.getDocumentField(),null)).append("value", values))));
-                }
-            } else if ("range".equals(def.getType())) {
-                DocumentModel searchDoc = getSearchDocumentModel();
-                List<String> values = (List<String>) searchDoc.getProperty(def.getSearchField().getSchema(),def.getSearchField().getName());
-                if (values != null && !values.isEmpty()) {
-                    String rangeName = values.get(0);
-                    AggregateRangeDefinition rangeDefinition = def.getRanges().stream().filter(range -> rangeName.equals(range.getKey())).findFirst().get();
-                    filters.add(
-                            SearchOperator.of(new Document("range",
-                                    new Document("path", getFieldName(def.getDocumentField(), null))
-                                            .append("boundaries", List.of(rangeDefinition.getFrom(), rangeDefinition.getTo())))));
-                }
-            } else {
-                continue;
+            AtlasFacetBase atlasFacet = getAggregate(def.getId());
+            SearchOperator filter = atlasFacet.getSelectionFilter();
+            if (filter != null) {
+                filters.add(filter);
             }
-
         }
         return filters;
     }
