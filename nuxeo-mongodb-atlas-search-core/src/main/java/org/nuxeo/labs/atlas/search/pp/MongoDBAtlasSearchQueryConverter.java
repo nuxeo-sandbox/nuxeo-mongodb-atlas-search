@@ -306,6 +306,25 @@ public class MongoDBAtlasSearchQueryConverter {
         return name;
     }
 
+    public static Set<String> getMixinDocumentTypes(String mixin) {
+        SchemaManager schemaManager = Framework.getService(SchemaManager.class);
+        Set<String> types = schemaManager.getDocumentTypeNamesForFacet(mixin);
+        return types == null ? Collections.emptySet() : types;
+    }
+
+    public static List<String> getDocumentTypes() {
+        SchemaManager schemaManager = Framework.getService(SchemaManager.class);
+        List<String> documentTypes = new ArrayList<>();
+        for (DocumentType docType : schemaManager.getDocumentTypes()) {
+            documentTypes.add(docType.getName());
+        }
+        return documentTypes;
+    }
+
+    public static boolean isNeverPerInstanceMixin(String mixin) {
+        SchemaManager schemaManager = Framework.getService(SchemaManager.class);
+        return schemaManager.getNoPerDocumentQueryFacets().contains(mixin);
+    }
 
     public static SearchOperator makeMixinTypesFilter(String op, String name, List<String> mixins) {
         boolean include = !List.of("NOT IN", "!=" ,"<>").contains(op);
@@ -377,18 +396,11 @@ public class MongoDBAtlasSearchQueryConverter {
     }
 
     public static SearchOperator makeBooleanEcmPropertyFilter(String op, String name, Object value) {
-        boolean equalsTrue;
-        switch (op) {
-            case "=":
-                equalsTrue = true;
-                break;
-            case "<>":
-            case "!=":
-                equalsTrue = false;
-                break;
-            default:
-                throw new IllegalArgumentException(name + " requires = or <> operator");
-        }
+        boolean equalsTrue = switch (op) {
+            case "=" -> true;
+            case "<>", "!=" -> false;
+            default -> throw new IllegalArgumentException(name + " requires = or <> operator");
+        };
 
         if (!(Boolean)checkBoolValue(name, value)) {
             equalsTrue = !equalsTrue;
@@ -429,21 +441,10 @@ public class MongoDBAtlasSearchQueryConverter {
         }
     }
 
-
     /**
      * Class to hold both a query and a filter
      */
-    public static class QueryAndFilter {
-
-        public final SearchOperator query;
-
-        public final SearchOperator filter;
-
-        public QueryAndFilter(SearchOperator query, SearchOperator filter) {
-            this.query = query;
-            this.filter = filter;
-        }
-    }
+    public record QueryAndFilter(SearchOperator query, SearchOperator filter) {}
 
     public static class ExpressionBuilder {
 
@@ -479,12 +480,16 @@ public class MongoDBAtlasSearchQueryConverter {
                 query = (CompoundSearchOperator) inputQuery;
             } else {
                 // boolean query
-                if ("AND".equals(operator)) {
-                    query = query != null ? query.must(List.of(inputQuery)) : SearchOperator.compound().must(List.of(inputQuery));
-                } else if ("OR".equals(operator)) {
-                    query = query != null ? query.should(List.of(inputQuery)) : SearchOperator.compound().should(List.of(inputQuery));
-                } else if ("NOT".equals(operator)) {
-                    query = query != null ? query.mustNot(List.of(inputQuery)) : SearchOperator.compound().mustNot(List.of(inputQuery));
+                switch (operator) {
+                    case "AND" ->
+                            query = query != null ? query.must(List.of(inputQuery)) :
+                                    SearchOperator.compound().must(List.of(inputQuery));
+                    case "OR" ->
+                            query = query != null ? query.should(List.of(inputQuery)) :
+                                    SearchOperator.compound().should(List.of(inputQuery));
+                    case "NOT" ->
+                            query = query != null ? query.mustNot(List.of(inputQuery)) :
+                                    SearchOperator.compound().mustNot(List.of(inputQuery));
                 }
             }
         }
@@ -506,27 +511,6 @@ public class MongoDBAtlasSearchQueryConverter {
             return query.toString();
         }
 
-    }
-
-
-    public static Set<String> getMixinDocumentTypes(String mixin) {
-        SchemaManager schemaManager = Framework.getService(SchemaManager.class);
-        Set<String> types = schemaManager.getDocumentTypeNamesForFacet(mixin);
-        return types == null ? Collections.emptySet() : types;
-    }
-
-    public static List<String> getDocumentTypes() {
-        SchemaManager schemaManager = Framework.getService(SchemaManager.class);
-        List<String> documentTypes = new ArrayList<>();
-        for (DocumentType docType : schemaManager.getDocumentTypes()) {
-            documentTypes.add(docType.getName());
-        }
-        return documentTypes;
-    }
-
-    public static boolean isNeverPerInstanceMixin(String mixin) {
-        SchemaManager schemaManager = Framework.getService(SchemaManager.class);
-        return schemaManager.getNoPerDocumentQueryFacets().contains(mixin);
     }
 
 }
