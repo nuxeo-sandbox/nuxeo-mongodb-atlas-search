@@ -17,6 +17,7 @@ import org.nuxeo.ecm.platform.query.api.Aggregate;
 import org.nuxeo.ecm.platform.query.api.AggregateDefinition;
 import org.nuxeo.ecm.platform.query.api.Bucket;
 import org.nuxeo.ecm.platform.query.nxql.CoreQueryDocumentPageProvider;
+import org.nuxeo.labs.atlas.search.pp.facets.AtlasDateRangeFacet;
 import org.nuxeo.labs.atlas.search.pp.facets.AtlasFacetBase;
 import org.nuxeo.labs.atlas.search.pp.facets.AtlasRangeFacet;
 import org.nuxeo.labs.atlas.search.pp.facets.AtlasTermFacet;
@@ -133,6 +134,7 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
         return switch(def.getType()) {
             case "terms" -> new AtlasTermFacet(def,getSearchDocumentModel());
             case "range" -> new AtlasRangeFacet(def,getSearchDocumentModel());
+            case "date_range" -> new AtlasDateRangeFacet(def,getSearchDocumentModel());
             default -> null;
         };
     }

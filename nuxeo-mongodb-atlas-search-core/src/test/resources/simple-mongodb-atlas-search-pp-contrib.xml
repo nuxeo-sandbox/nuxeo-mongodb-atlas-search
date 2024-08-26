@@ -52,6 +52,19 @@
                         <range from="104857601" key="huge" />
                     </ranges>
                 </aggregate>
+                <aggregate id="dc_modified_agg" type="date_range" parameter="dc:modified">
+                    <field schema="simple-atlas_pp" name="dc_modified_agg" />
+                    <properties>
+                        <property name="format">"dd-MM-yyyy"</property>
+                    </properties>
+                    <dateRanges>
+                        <dateRange key="last24h" fromDate="now-24H" toDate="now"/>
+                        <dateRange key="lastWeek" fromDate="now-7d" toDate="now-24H"/>
+                        <dateRange key="lastMonth" fromDate="now-1M" toDate="now-7d"/>
+                        <dateRange key="lastYear" fromDate="now-1y" toDate="now-1M"/>
+                        <dateRange key="priorToLastYear" toDate="now-1y"/>
+                    </dateRanges>
+                </aggregate>
             </aggregates>
         </genericPageProvider>
     </extension>

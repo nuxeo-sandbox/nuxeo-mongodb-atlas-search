@@ -44,7 +44,7 @@ public class TestAtlasPageProvider {
         Assert.assertFalse(results.isEmpty());
         Assert.assertEquals(1, pp.getResultsCount());
         Map<String, Aggregate<? extends Bucket>> aggregates = pp.getAggregates();
-        Assert.assertEquals(2, aggregates.size());
+        Assert.assertEquals(3, aggregates.size());
     }
 
     @Test
