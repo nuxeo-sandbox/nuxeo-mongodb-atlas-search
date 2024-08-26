@@ -4,9 +4,15 @@ import com.mongodb.client.model.search.SearchOperator;
 import org.bson.BsonValue;
 import org.bson.Document;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.model.Property;
+import org.nuxeo.ecm.core.api.model.impl.ArrayProperty;
+import org.nuxeo.ecm.core.api.model.impl.ListProperty;
 import org.nuxeo.ecm.platform.query.api.AggregateDefinition;
 import org.nuxeo.ecm.platform.query.api.Bucket;
 import org.nuxeo.ecm.platform.query.core.AggregateBase;
+
+import java.util.Arrays;
+import java.util.List;
 
 public abstract class AtlasFacetBase<B extends Bucket> extends AggregateBase<B> {
 
@@ -53,5 +59,22 @@ public abstract class AtlasFacetBase<B extends Bucket> extends AggregateBase<B> 
     public String getXPathField() {
         String ret = super.getField();
         return ret.replace(ES_MUTLI_LEVEL_SEP, XPATH_SEP);
+    }
+
+    public List<String> getValues() {
+        Property prop = searchDocument.getPropertyObject(
+                definition.getSearchField().getSchema(),
+                definition.getSearchField().getName());
+
+        if (prop == null) {
+            return null;
+        } else if (prop instanceof ArrayProperty) {
+            String[] array = (String[]) prop.getValue();
+            return array != null ? Arrays.asList(array) : null;
+        } else if (prop instanceof ListProperty) {
+            return (List<String>) prop.getValue();
+        } else {
+            return null;
+        }
     }
 }

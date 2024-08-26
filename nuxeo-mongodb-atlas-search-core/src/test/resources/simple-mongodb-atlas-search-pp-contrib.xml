@@ -37,13 +37,13 @@
             <pageSize>10</pageSize>
             <aggregates>
                 <aggregate id="ecm_primarytype_agg" type="terms" parameter="ecm:primaryType">
-                    <field name="simple-atlas_pp" schema="ecm_primarytype_agg"/>
+                    <field name="ecm_primarytype_agg" schema="simple-atlas_pp"/>
                     <properties>
                         <property name="size">10</property>
                     </properties>
                 </aggregate>
                 <aggregate id="common_size_agg" parameter="file:content/length" type="range">
-                    <field name="common_size_agg" schema="default_search" />
+                    <field name="common_size_agg" schema="simple-atlas_pp" />
                     <ranges>
                         <range key="tiny" to="102400" />
                         <range from="102401" key="small" to="1048576" />

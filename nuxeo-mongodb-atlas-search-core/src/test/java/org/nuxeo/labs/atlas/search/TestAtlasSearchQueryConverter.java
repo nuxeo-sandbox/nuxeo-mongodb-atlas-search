@@ -39,13 +39,24 @@ public class TestAtlasSearchQueryConverter {
     }
 
     @Test
-    public void testEqualTimeStamp() {
+    public void testEqualsTimeStamp() {
         String nxql = "SELECT * FROM Document WHERE dc:created = TIMESTAMP '2023-07-13T22:00:00.000Z'";
         SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.toAtlasQuery(nxql);
         System.out.println(searchOperator);
         BsonDocument equals = searchOperator.toBsonDocument().getDocument("equals");
         Assert.assertEquals("dc:created", equals.getString("path").getValue());
         Assert.assertEquals("ISODate(\"2023-07-13T22:00:00.000Z\")",
+                equals.getString("value").getValue());
+    }
+
+    @Test
+    public void testEqualsDate() {
+        String nxql = "SELECT * FROM Document WHERE dc:created = DATE '2023-07-13'";
+        SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.toAtlasQuery(nxql);
+        System.out.println(searchOperator);
+        BsonDocument equals = searchOperator.toBsonDocument().getDocument("equals");
+        Assert.assertEquals("dc:created", equals.getString("path").getValue());
+        Assert.assertEquals("ISODate(\"2023-07-13\")",
                 equals.getString("value").getValue());
     }
 

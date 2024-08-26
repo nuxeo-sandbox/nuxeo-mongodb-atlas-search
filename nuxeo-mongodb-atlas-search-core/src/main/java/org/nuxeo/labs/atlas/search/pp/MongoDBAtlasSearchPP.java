@@ -174,9 +174,11 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
         Document facets = new Document();
         for (AggregateDefinition def : getAggregateDefinitions()) {
             AtlasFacetBase atlasFacet = getAggregate(def.getId());
-            Document facet = atlasFacet.getFacet();
-            if (facet != null) {
-                facets.append(def.getId(), facet);
+            if (atlasFacet != null) {
+                Document facet = atlasFacet.getFacet();
+                if (facet != null) {
+                    facets.append(def.getId(), facet);
+                }
             }
         }
         return facets;
@@ -186,9 +188,11 @@ public class MongoDBAtlasSearchPP extends CoreQueryDocumentPageProvider {
         List<SearchOperator> filters = new ArrayList<>();
         for (AggregateDefinition def : getAggregateDefinitions()) {
             AtlasFacetBase atlasFacet = getAggregate(def.getId());
-            SearchOperator filter = atlasFacet.getSelectionFilter();
-            if (filter != null) {
-                filters.add(filter);
+            if (atlasFacet != null) {
+                SearchOperator filter = atlasFacet.getSelectionFilter();
+                if (filter != null) {
+                    filters.add(filter);
+                }
             }
         }
         return filters;

@@ -28,10 +28,7 @@ public class AtlasTermFacet extends AtlasFacetBase<BucketTerm> {
 
     @Override
     public SearchOperator getSelectionFilter() {
-        List<String> values = (List<String>) getSearchDocument().getProperty(
-                definition.getSearchField().getSchema(),
-                definition.getSearchField().getName());
-
+        List<String> values = getValues();
         if (values != null && !values.isEmpty()) {
             return SearchOperator.of(new Document("in",
                     new Document("path", getFieldName(definition.getDocumentField(), null))
