@@ -50,6 +50,17 @@ public class TestAtlasSearchQueryConverter {
     }
 
     @Test
+    public void testEqualSystemStringField() {
+        String nxql = "SELECT * FROM Document WHERE ecm:name = 'Hello'";
+        SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.toAtlasQuery(nxql);
+        System.out.println(searchOperator);
+        BsonDocument equals = searchOperator.toBsonDocument().getDocument("equals");
+        Assert.assertEquals("ecm:name", equals.getString("path").getValue());
+        Assert.assertEquals("Hello",
+                equals.getString("value").getValue());
+    }
+
+    @Test
     public void testEqualIsVersion() {
         SearchOperator searchOperator = MongoDBAtlasSearchQueryConverter.makeBooleanEcmPropertyFilter("=", NXQL.ECM_ISVERSION, true);
         Assert.assertNotNull(searchOperator);

@@ -420,7 +420,7 @@ public class MongoDBAtlasSearchQueryConverter {
         } else {
             SchemaManager schemaManager = Framework.getService(SchemaManager.class);
             Field field = schemaManager.getField(nxqlName);
-            if (BooleanType.ID.equals(field.getType().getName())) {
+            if (field != null  && BooleanType.ID.equals(field.getType().getName())) {
                 isBoolean = true;
             }
         }
