@@ -4,6 +4,7 @@ import com.mongodb.client.model.search.SearchOperator;
 import org.bson.BsonValue;
 import org.bson.Document;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.platform.query.api.AggregateDefinition;
 import org.nuxeo.ecm.platform.query.api.AggregateRangeDefinition;
 import org.nuxeo.ecm.platform.query.core.BucketRange;
@@ -20,17 +21,20 @@ public class AtlasRangeFacet extends AtlasFacetBase<BucketRange> {
 
     @Override
     public Document getFacet() {
-        List<Double> boundaries = new ArrayList<>();
+        HashSet<Double> boundariesSet = new HashSet<>();
         definition.getRanges().forEach(range -> {
-            if (range.getFrom() == null) {
-                boundaries.add(Double.NEGATIVE_INFINITY);
-            } else {
-                boundaries.add(range.getFrom());
-            }
-            if (range.getTo() == null) {
-                boundaries.add(Double.POSITIVE_INFINITY);
-            }
+            boundariesSet.add(normalizeFromValue(range.getFrom()));
+            boundariesSet.add(normalizeToValue(range.getTo()));
         });
+
+        List<Double> boundaries = boundariesSet.stream().filter(Objects::nonNull)
+                .sorted()
+                .toList();
+
+        if (boundaries.size() != (definition.getRanges().size()+1)) {
+            throw new NuxeoException(String.format("bucket intervals for %s are disjoint. That's no good with atlas search",definition.getId()));
+        }
+
         return new Document("type", "number")
                 .append("path", getFieldName(definition.getDocumentField(),null))
                 .append("boundaries", boundaries);

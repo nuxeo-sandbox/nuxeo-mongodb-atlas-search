@@ -68,7 +68,7 @@ public class TestRangeFacet {
         MongoDBAtlasSearchPP pp = (MongoDBAtlasSearchPP) getPP(namedParameters);
         AtlasFacetBase facet = pp.getAggregate("common_size_agg");
         BsonDocument filter = facet.getSelectionFilter().toBsonDocument().getDocument("range");
-        Assert.assertEquals(102401.0, filter.getDouble("gte").getValue(),Double.MIN_VALUE);
+        Assert.assertEquals(102400.0, filter.getDouble("gte").getValue(),Double.MIN_VALUE);
         Assert.assertEquals(1048576.0, filter.getDouble("lt").getValue(), Double.MIN_VALUE);
     }
 

@@ -46,10 +46,10 @@
                     <field name="common_size_agg" schema="simple-atlas_pp" />
                     <ranges>
                         <range key="tiny" to="102400" />
-                        <range from="102401" key="small" to="1048576" />
-                        <range from="1048577" key="medium" to="10485760" />
-                        <range from="10485761" key="big" to="104857600" />
-                        <range from="104857601" key="huge" />
+                        <range from="102400" key="small" to="1048576" />
+                        <range from="1048576" key="medium" to="10485760" />
+                        <range from="10485760" key="big" to="104857600" />
+                        <range from="104857600" key="huge" />
                     </ranges>
                 </aggregate>
                 <aggregate id="dc_modified_agg" type="date_range" parameter="dc:modified">
