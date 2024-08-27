@@ -6,6 +6,7 @@ import org.bson.Document;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.platform.query.api.AggregateDefinition;
+import org.nuxeo.ecm.platform.query.api.AggregateRangeDateDefinition;
 import org.nuxeo.ecm.platform.query.api.AggregateRangeDefinition;
 import org.nuxeo.ecm.platform.query.core.BucketRange;
 
@@ -67,7 +68,7 @@ public class AtlasRangeFacet extends AtlasFacetBase<BucketRange> {
         String filterKey = filterValues != null && !filterValues.isEmpty() ? filterValues.get(0) : null;
         List<BucketRange> parsedBucket = new ArrayList<>();
         BsonValue[] buckets = facet.asDocument().getArray("buckets").toArray(BsonValue[]::new);
-        List<AggregateRangeDefinition> ranges = definition.getRanges();
+        List<AggregateRangeDefinition> ranges = getOrderedRangeDefinitions();
         for(int i = 0; i < buckets.length; i++ ) {
             BsonValue bucket = buckets[i];
             AggregateRangeDefinition rangeDefinition = ranges.get(i);
@@ -91,6 +92,18 @@ public class AtlasRangeFacet extends AtlasFacetBase<BucketRange> {
     public double normalizeToValue(Double value) {
         return Objects.requireNonNullElse(value, Double.MAX_VALUE);
     }
+
+    public List<AggregateRangeDefinition> getOrderedRangeDefinitions() {
+        //build interval list
+        TreeMap<Double, AggregateRangeDefinition> fromKeyMap = new TreeMap<>();
+
+        definition.getRanges().forEach(range -> {
+            fromKeyMap.put(normalizeFromValue(normalizeFromValue(range.getFrom())), range);
+        });
+
+        return fromKeyMap.values().stream().toList();
+    }
+
 
 
 }

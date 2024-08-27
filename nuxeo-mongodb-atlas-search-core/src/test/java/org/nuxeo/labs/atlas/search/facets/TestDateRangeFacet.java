@@ -11,6 +11,7 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.test.DefaultRepositoryInit;
 import org.nuxeo.ecm.core.test.annotations.Granularity;
 import org.nuxeo.ecm.core.test.annotations.RepositoryConfig;
+import org.nuxeo.ecm.platform.query.api.AggregateRangeDateDefinition;
 import org.nuxeo.ecm.platform.query.api.PageProvider;
 import org.nuxeo.ecm.platform.query.api.PageProviderDefinition;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
@@ -39,6 +40,18 @@ public class TestDateRangeFacet {
 
     @Inject
     CoreSession session;
+
+    @Test
+    public void testRangeSorting() {
+        HashMap<String, String> namedParameters = new HashMap<>();
+        MongoDBAtlasSearchPP pp = (MongoDBAtlasSearchPP) getPP(namedParameters);
+        AtlasDateRangeFacet facet = (AtlasDateRangeFacet) pp.getAggregate("dc_modified_agg");
+        Assert.assertEquals("last24h",facet.getDateRanges().get(0).getKey());
+        List<AggregateRangeDateDefinition> ranges = facet.getOrderedRangeDefinitions();
+        Assert.assertEquals("priorToLastYear",ranges.get(0).getKey());
+        Assert.assertEquals("last24h",ranges.get(ranges.size()-1).getKey());
+    }
+
 
     @Test
     public void testDateRangeFacet() {

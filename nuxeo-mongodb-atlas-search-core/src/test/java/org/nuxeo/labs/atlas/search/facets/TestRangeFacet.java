@@ -11,10 +11,13 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.test.DefaultRepositoryInit;
 import org.nuxeo.ecm.core.test.annotations.Granularity;
 import org.nuxeo.ecm.core.test.annotations.RepositoryConfig;
+import org.nuxeo.ecm.platform.query.api.AggregateRangeDateDefinition;
+import org.nuxeo.ecm.platform.query.api.AggregateRangeDefinition;
 import org.nuxeo.ecm.platform.query.api.PageProvider;
 import org.nuxeo.ecm.platform.query.api.PageProviderDefinition;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.labs.atlas.search.pp.MongoDBAtlasSearchPP;
+import org.nuxeo.labs.atlas.search.pp.facets.AtlasDateRangeFacet;
 import org.nuxeo.labs.atlas.search.pp.facets.AtlasFacetBase;
 import org.nuxeo.labs.atlas.search.pp.facets.AtlasRangeFacet;
 import org.nuxeo.runtime.test.runner.Deploy;
@@ -39,6 +42,17 @@ public class TestRangeFacet {
 
     @Inject
     CoreSession session;
+
+    @Test
+    public void testRangeSorting() {
+        HashMap<String, String> namedParameters = new HashMap<>();
+        MongoDBAtlasSearchPP pp = (MongoDBAtlasSearchPP) getPP(namedParameters);
+        AtlasRangeFacet facet = (AtlasRangeFacet) pp.getAggregate("common_size_agg");
+        Assert.assertEquals("tiny",facet.getRanges().get(0).getKey());
+        List<AggregateRangeDefinition> ranges = facet.getOrderedRangeDefinitions();
+        Assert.assertEquals("tiny",ranges.get(0).getKey());
+        Assert.assertEquals("huge",ranges.get(ranges.size()-1).getKey());
+    }
 
     @Test
     public void testRangeFacet() {

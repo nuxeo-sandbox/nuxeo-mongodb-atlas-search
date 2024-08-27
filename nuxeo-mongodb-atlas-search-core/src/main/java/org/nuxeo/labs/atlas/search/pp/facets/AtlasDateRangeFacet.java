@@ -63,8 +63,8 @@ public class AtlasDateRangeFacet extends AtlasFacetBase<BucketRangeDate> {
                 AggregateRangeDateDefinition rangeDefinition = rangeDefinitionOpt.get();
                 return SearchOperator.of(new Document("range",
                         new Document("path", getFieldName(definition.getDocumentField(), null))
-                                .append("gte", toAtlasDate(normalizeFromValue(rangeDefinition.getFromAsString())))
-                                .append("lt", toAtlasDate(normalizeToValue(rangeDefinition.getToAsString())))));
+                                .append("gte", Date.from(Instant.parse(normalizeFromValue(rangeDefinition.getFromAsString()))))
+                                .append("lt", Date.from(Instant.parse(normalizeToValue(rangeDefinition.getToAsString()))))));
             } else {
                 return null;
             }
@@ -79,7 +79,7 @@ public class AtlasDateRangeFacet extends AtlasFacetBase<BucketRangeDate> {
         String filterKey = filterValues != null && !filterValues.isEmpty() ? filterValues.get(0) : null;
         List<BucketRangeDate> parsedBucket = new ArrayList<>();
         BsonValue[] buckets = facet.asDocument().getArray("buckets").toArray(BsonValue[]::new);
-        List<AggregateRangeDateDefinition> ranges = definition.getDateRanges();
+        List<AggregateRangeDateDefinition> ranges = getOrderedRangeDefinitions();
         for(int i = 0; i < buckets.length; i++ ) {
             BsonValue bucket = buckets[i];
             AggregateRangeDateDefinition rangeDefinition = ranges.get(i);
@@ -141,7 +141,15 @@ public class AtlasDateRangeFacet extends AtlasFacetBase<BucketRangeDate> {
         }
     }
 
-    public String toAtlasDate(String date) {
-        return String.format("ISODate(\"%s\")",date);
+    public List<AggregateRangeDateDefinition> getOrderedRangeDefinitions() {
+        //build interval list
+        TreeMap<String, AggregateRangeDateDefinition> fromKeyMap = new TreeMap<>();
+
+        definition.getDateRanges().forEach(range -> {
+            fromKeyMap.put(normalizeFromValue(range.getFromAsString()), range);
+        });
+
+        return fromKeyMap.values().stream().toList();
     }
+
 }
