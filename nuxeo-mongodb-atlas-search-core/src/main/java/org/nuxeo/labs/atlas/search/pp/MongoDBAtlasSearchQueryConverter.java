@@ -408,7 +408,7 @@ public class MongoDBAtlasSearchQueryConverter {
 
         return equalsTrue ?
                 SearchOperator.of(new Document("equals", new Document("path", name).append("value", equalsTrue)))
-                : null;
+                : SearchOperator.compound().mustNot(List.of(SearchOperator.exists(SearchPath.fieldPath(name))));
     }
 
     public static Object checkBoolValue(String nxqlName, Object value) {
