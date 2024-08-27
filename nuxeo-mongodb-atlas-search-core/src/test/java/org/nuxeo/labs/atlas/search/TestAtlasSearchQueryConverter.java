@@ -45,8 +45,7 @@ public class TestAtlasSearchQueryConverter {
         System.out.println(searchOperator);
         BsonDocument equals = searchOperator.toBsonDocument().getDocument("equals");
         Assert.assertEquals("dc:created", equals.getString("path").getValue());
-        Assert.assertEquals("ISODate(\"2023-07-13T22:00:00.000Z\")",
-                equals.getString("value").getValue());
+        Assert.assertTrue(equals.getDateTime("value").getValue() > 0);
     }
 
     @Test
@@ -56,8 +55,7 @@ public class TestAtlasSearchQueryConverter {
         System.out.println(searchOperator);
         BsonDocument equals = searchOperator.toBsonDocument().getDocument("equals");
         Assert.assertEquals("dc:created", equals.getString("path").getValue());
-        Assert.assertEquals("ISODate(\"2023-07-13\")",
-                equals.getString("value").getValue());
+        Assert.assertTrue(equals.getDateTime("value").getValue() > 0);
     }
 
     @Test

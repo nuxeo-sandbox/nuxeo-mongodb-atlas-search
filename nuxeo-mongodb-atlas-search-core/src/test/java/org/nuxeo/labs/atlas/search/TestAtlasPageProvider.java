@@ -63,9 +63,22 @@ public class TestAtlasPageProvider {
     }
 
     @Test
-    public void testGt() {
+    public void testGtNumber() {
         HashMap<String, String> namedParameters = new HashMap<>();
         namedParameters.put("common_size_gt", "100");
+        PageProvider<DocumentModel> pp = getPP(namedParameters);
+        Map<String, Serializable> props = pp.getProperties();
+        props.put(PageProvider.SKIP_AGGREGATES_PROP,true);
+        pp.setProperties(props);
+        List<DocumentModel> results = pp.getCurrentPage();
+        Assert.assertFalse(results.isEmpty());
+    }
+
+    @Test
+    public void testGtDate() {
+        HashMap<String, String> namedParameters = new HashMap<>();
+        namedParameters.put("system_fulltext", "prores");
+        namedParameters.put("dc_modified_gt", "1970-01-01T00:00:00.000Z");
         PageProvider<DocumentModel> pp = getPP(namedParameters);
         Map<String, Serializable> props = pp.getProperties();
         props.put(PageProvider.SKIP_AGGREGATES_PROP,true);

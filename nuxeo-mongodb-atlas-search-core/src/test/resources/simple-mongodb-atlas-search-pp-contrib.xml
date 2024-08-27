@@ -33,6 +33,9 @@
                 <predicate parameter="file:content/length" operator=">">
                     <field schema="simple-atlas_pp" name="common_size_gt"/>
                 </predicate>
+                <predicate parameter="dc:modified" operator=">">
+                    <field schema="simple-atlas_pp" name="dc_modified_gt"/>
+                </predicate>
             </whereClause>
             <pageSize>10</pageSize>
             <aggregates>
