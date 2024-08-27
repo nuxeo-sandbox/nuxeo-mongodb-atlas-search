@@ -35,7 +35,9 @@ The current implementation doesn't support the following NXQL operator:
 - range
 - date_range
 
-Moreover, `range` and `date_range` cannot be used on complex properties subfields
+Moreover, the following limitations applies to `range` and `date_range`:
+- cannot be used on complex properties subfields
+- ranges are not independent and must be contiguous
 
 # Support
 **These features are not part of the Nuxeo Production platform.**
@@ -48,6 +50,12 @@ useful for the Nuxeo Platform in general, they will be integrated directly into 
 
 # Nuxeo Marketplace
 TODO
+
+The marketplace package contains a configuration template `nuxeo-mongodb-atlas-search` which, when installed, makes the following PageProvider use Atlas Search:
+- default_search
+- default_trash_search
+- simple_search
+- expired_search
 
 # License
 [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)

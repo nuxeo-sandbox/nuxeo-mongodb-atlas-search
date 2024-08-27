@@ -1,6 +1,6 @@
 services:
   nuxeo:
-    image: nuxeo-mongodb-atlas-search:2023.0.0-SNAPSHOT
+    image: nuxeo-mongodb-atlas-search:2023.1.0-SNAPSHOT
     env_file:
       - ./.env
     ports:
