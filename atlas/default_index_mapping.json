@@ -1,0 +1,138 @@
+{
+  "analyzer": "lucene.english",
+  "searchAnalyzer": "lucene.english",
+  "mappings": {
+    "dynamic": true,
+    "fields": {
+      "collectionMember:collectionIds": {
+        "type": "token"
+      },
+      "content": {
+        "fields": {
+          "length": [
+            {
+              "indexDoubles": false,
+              "representation": "int64",
+              "type": "number"
+            },
+            {
+              "type": "numberFacet"
+            }
+          ]
+        },
+        "type": "document"
+      },
+      "dc:contributors": [
+        {
+          "type": "token"
+        },
+        {
+          "type": "stringFacet"
+        }
+      ],
+      "dc:coverage": [
+        {
+          "type": "token"
+        },
+        {
+          "type": "stringFacet"
+        }
+      ],
+      "dc:creator": [
+        {
+          "type": "token"
+        },
+        {
+          "type": "stringFacet"
+        }
+      ],
+      "dc:expired": [
+        {
+          "type": "date"
+        },
+        {
+          "type": "dateFacet"
+        }
+      ],
+      "dc:modified": [
+        {
+          "type": "date"
+        },
+        {
+          "type": "dateFacet"
+        }
+      ],
+      "dc:nature": [
+        {
+          "type": "token"
+        },
+        {
+          "type": "stringFacet"
+        }
+      ],
+      "dc:subjects": [
+        {
+          "type": "token"
+        },
+        {
+          "type": "stringFacet"
+        }
+      ],
+      "ecm:currentLifeCycleState": [
+        {
+          "type": "token"
+        },
+        {
+          "type": "stringFacet"
+        }
+      ],
+      "ecm:fulltextBinary": {
+        "type": "string"
+      },
+      "ecm:fulltextSimple": {
+        "type": "string"
+      },
+      "ecm:id": {
+        "type": "uuid"
+      },
+      "ecm:mixinTypes": [
+        {
+          "type": "stringFacet"
+        },
+        {
+          "type": "token"
+        }
+      ],
+      "ecm:name": {
+        "type": "token"
+      },
+      "ecm:parentId": {
+        "type": "uuid"
+      },
+      "ecm:primaryType": [
+        {
+          "type": "stringFacet"
+        },
+        {
+          "type": "token"
+        }
+      ],
+      "ecm:racl": {
+        "type": "token"
+      },
+      "nxtag:tags": {
+        "fields": {
+          "label": [
+            {
+              "type": "token"
+            },
+            {
+              "type": "stringFacet"
+            }
+          ]
+        },
+        "type": "document"
+      }
+    }
+  }
+}
