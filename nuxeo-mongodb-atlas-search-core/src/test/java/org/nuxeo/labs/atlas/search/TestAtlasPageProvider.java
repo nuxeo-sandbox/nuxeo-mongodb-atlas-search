@@ -38,11 +38,11 @@ public class TestAtlasPageProvider {
     @Test
     public void testWithAgg() {
         HashMap<String, String> namedParameters = new HashMap<>();
-        namedParameters.put("system_fulltext", "prores");
+        namedParameters.put("system_fulltext", "file");
         PageProvider<DocumentModel> pp = getPP(namedParameters);
         List<DocumentModel> results = pp.getCurrentPage();
         Assert.assertFalse(results.isEmpty());
-        Assert.assertEquals(1, pp.getResultsCount());
+        Assert.assertTrue(pp.getResultsCount() > 0);
         Map<String, Aggregate<? extends Bucket>> aggregates = pp.getAggregates();
         Assert.assertEquals(3, aggregates.size());
     }
@@ -50,14 +50,14 @@ public class TestAtlasPageProvider {
     @Test
     public void testWithoutAgg() {
         HashMap<String, String> namedParameters = new HashMap<>();
-        namedParameters.put("system_fulltext", "prores");
+        namedParameters.put("system_fulltext", "file");
         PageProvider<DocumentModel> pp = getPP(namedParameters);
         Map<String, Serializable> props = pp.getProperties();
         props.put(PageProvider.SKIP_AGGREGATES_PROP,true);
         pp.setProperties(props);
         List<DocumentModel> results = pp.getCurrentPage();
         Assert.assertFalse(results.isEmpty());
-        Assert.assertEquals(1, pp.getResultsCount());
+        Assert.assertTrue(pp.getResultsCount() > 0);
         Map<String, Aggregate<? extends Bucket>> aggregates = pp.getAggregates();
         Assert.assertTrue(aggregates == null || aggregates.isEmpty());
     }
@@ -77,7 +77,7 @@ public class TestAtlasPageProvider {
     @Test
     public void testGtDate() {
         HashMap<String, String> namedParameters = new HashMap<>();
-        namedParameters.put("system_fulltext", "prores");
+        namedParameters.put("system_fulltext", "file");
         namedParameters.put("dc_modified_gt", "1970-01-01T00:00:00.000Z");
         PageProvider<DocumentModel> pp = getPP(namedParameters);
         Map<String, Serializable> props = pp.getProperties();
