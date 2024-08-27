@@ -2,4 +2,4 @@
 nuxeo-mongodb-atlas-search.target=.
 
 mongodb.atlas.search.enabled=true
-mongodb.atlas.search.override.pageproviders=default_search
+mongodb.atlas.search.override.pageproviders=default_search,default_trash_search,simple_search,expired_search
