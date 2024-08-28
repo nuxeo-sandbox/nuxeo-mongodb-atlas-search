@@ -84,7 +84,7 @@ public class TestAtlasSearchQueryConverter {
         System.out.println(searchOperator);
         Assert.assertEquals(1,searchOperator.toBsonDocument().getDocument("compound").getArray("mustNot").size());
         BsonDocument mustnot = searchOperator.toBsonDocument().getDocument("compound").getArray("mustNot").get(0).asDocument();
-        Assert.assertEquals(NXQL.ECM_ISVERSION, mustnot.getDocument("exists").getString("path").getValue());
+        Assert.assertEquals(NXQL.ECM_ISVERSION, mustnot.getDocument("equals").getString("path").getValue());
     }
 
     @Test

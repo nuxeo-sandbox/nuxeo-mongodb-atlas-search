@@ -402,13 +402,19 @@ public class MongoDBAtlasSearchQueryConverter {
             default -> throw new IllegalArgumentException(name + " requires = or <> operator");
         };
 
+        //invert if value is false
         if (!(Boolean)checkBoolValue(name, value)) {
             equalsTrue = !equalsTrue;
         }
 
-        return equalsTrue ?
-                SearchOperator.of(new Document("equals", new Document("path", name).append("value", equalsTrue)))
-                : SearchOperator.compound().mustNot(List.of(SearchOperator.exists(SearchPath.fieldPath(name))));
+        SearchOperator searchOperator = SearchOperator.of(new Document("equals", new Document("path", name).append("value", true)));
+
+        //field may not exist, be null or contain false so the only reliable filter is "not equal to true"
+        if (!equalsTrue) {
+            searchOperator = SearchOperator.compound().mustNot(List.of(searchOperator));
+        }
+
+        return searchOperator;
     }
 
     public static Object checkBoolValue(String nxqlName, Object value) {

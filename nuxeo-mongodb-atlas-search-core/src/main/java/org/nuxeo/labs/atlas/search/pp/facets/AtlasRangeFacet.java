@@ -6,7 +6,6 @@ import org.bson.Document;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.platform.query.api.AggregateDefinition;
-import org.nuxeo.ecm.platform.query.api.AggregateRangeDateDefinition;
 import org.nuxeo.ecm.platform.query.api.AggregateRangeDefinition;
 import org.nuxeo.ecm.platform.query.core.BucketRange;
 
@@ -86,11 +85,11 @@ public class AtlasRangeFacet extends AtlasFacetBase<BucketRange> {
     }
 
     public double normalizeFromValue(Double value) {
-        return Objects.requireNonNullElse(value, Double.MIN_VALUE);
+        return Objects.requireNonNullElse(value, Double.NEGATIVE_INFINITY);
     }
 
     public double normalizeToValue(Double value) {
-        return Objects.requireNonNullElse(value, Double.MAX_VALUE);
+        return Objects.requireNonNullElse(value, Double.POSITIVE_INFINITY);
     }
 
     public List<AggregateRangeDefinition> getOrderedRangeDefinitions() {
